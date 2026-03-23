@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useCompletion } from '@ai-sdk/react'
 
 function djb2Hash(str: string): string {
   let hash = 5381
@@ -16,89 +17,45 @@ interface AiSummaryProps {
 }
 
 export default function AiSummary({ slug, content }: AiSummaryProps) {
-  const [summary, setSummary] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>('')
-
   const contentHash = djb2Hash(content)
   const cacheKey = `ai-summary-${slug}-${contentHash}`
+  const [cachedSummary, setCachedSummary] = useState<string | null>(null)
+  const hasTriggered = useRef(false)
+
+  const { completion, complete, isLoading, error } = useCompletion({
+    api: '/api/ai/summary',
+    streamProtocol: 'text',
+    body: { slug },
+    onFinish: (_prompt, completionText) => {
+      try {
+        localStorage.setItem(cacheKey, completionText)
+      } catch {
+        // localStorage full or not available
+      }
+    },
+  })
 
   useEffect(() => {
-    // Check localStorage cache
+    // Check localStorage cache first
     try {
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
-        setSummary(cached)
-        setIsLoading(false)
+        setCachedSummary(cached)
         return
       }
     } catch {
-      // localStorage not available, continue to fetch
+      // localStorage not available
     }
 
-    // Fetch streaming summary
-    const abortController = new AbortController()
-
-    async function fetchSummary() {
-      try {
-        const res = await fetch('/api/ai/summary', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, slug }),
-          signal: abortController.signal,
-        })
-
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`)
-        }
-
-        const reader = res.body?.getReader()
-        if (!reader) throw new Error('No reader available')
-
-        const decoder = new TextDecoder()
-        let fullText = ''
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          const chunk = decoder.decode(value, { stream: true })
-          // Parse Vercel AI SDK data stream format
-          const lines = chunk.split('\n')
-          for (const line of lines) {
-            if (line.startsWith('0:')) {
-              try {
-                const text = JSON.parse(line.slice(2))
-                fullText += text
-                setSummary(fullText)
-              } catch {
-                // Skip unparseable lines
-              }
-            }
-          }
-        }
-
-        // Cache the complete summary
-        try {
-          localStorage.setItem(cacheKey, fullText)
-        } catch {
-          // localStorage full or not available
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          setError('AI 摘要生成失败，请稍后刷新重试')
-        }
-      } finally {
-        setIsLoading(false)
-      }
+    // Trigger streaming completion
+    if (!hasTriggered.current) {
+      hasTriggered.current = true
+      complete(content)
     }
+  }, [cacheKey, content, complete])
 
-    fetchSummary()
-
-    return () => {
-      abortController.abort()
-    }
-  }, [cacheKey, content, slug])
+  const displayText = cachedSummary || completion
+  const showLoading = !cachedSummary && isLoading && !completion
 
   return (
     <div
@@ -116,14 +73,14 @@ export default function AiSummary({ slug, content }: AiSummaryProps) {
         AI 摘要
       </div>
       {error ? (
-        <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
-      ) : isLoading && !summary ? (
+        <p className="text-sm text-red-500 dark:text-red-400">AI 摘要生成失败，请稍后刷新重试</p>
+      ) : showLoading ? (
         <div data-testid="ai-summary-loading" className="space-y-2">
           <div className="h-3 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
           <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
         </div>
       ) : (
-        <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{summary}</p>
+        <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{displayText}</p>
       )}
     </div>
   )

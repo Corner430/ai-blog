@@ -4,10 +4,21 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import AiSummary from '../AiSummary'
 
-// Mock fetch
-global.fetch = jest.fn()
+// Mock @ai-sdk/react before importing the component
+const mockComplete = jest.fn()
+const mockUseCompletion = jest.fn(() => ({
+  completion: '',
+  complete: mockComplete,
+  isLoading: false,
+  error: undefined,
+}))
+
+jest.mock('@ai-sdk/react', () => ({
+  useCompletion: (...args: unknown[]) => mockUseCompletion(...args),
+}))
+
+import AiSummary from '../AiSummary'
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -31,6 +42,12 @@ describe('AiSummary', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     localStorageMock.clear()
+    mockUseCompletion.mockReturnValue({
+      completion: '',
+      complete: mockComplete,
+      isLoading: false,
+      error: undefined,
+    })
   })
 
   it('renders summary container', () => {
@@ -39,8 +56,6 @@ describe('AiSummary', () => {
   })
 
   it('shows cached summary when available', () => {
-    // Pre-populate localStorage with a cached summary
-    // We need to match the hash key format used by the component
     localStorageMock.getItem.mockImplementation((key: string) => {
       if (key.startsWith('ai-summary-test-')) {
         return 'This is a cached summary'
@@ -54,9 +69,40 @@ describe('AiSummary', () => {
 
   it('shows loading state during streaming', () => {
     localStorageMock.getItem.mockReturnValue(null)
-    ;(global.fetch as jest.Mock).mockReturnValue(new Promise(() => {})) // Never resolves
+    mockUseCompletion.mockReturnValue({
+      completion: '',
+      complete: mockComplete,
+      isLoading: true,
+      error: undefined,
+    })
 
     render(<AiSummary slug="test" content="Test article content" />)
     expect(screen.getByTestId('ai-summary-loading')).toBeInTheDocument()
+  })
+
+  it('shows streaming completion text', () => {
+    localStorageMock.getItem.mockReturnValue(null)
+    mockUseCompletion.mockReturnValue({
+      completion: 'Partial summary text...',
+      complete: mockComplete,
+      isLoading: true,
+      error: undefined,
+    })
+
+    render(<AiSummary slug="test" content="Test article content" />)
+    expect(screen.getByText('Partial summary text...')).toBeInTheDocument()
+  })
+
+  it('shows error message on failure', () => {
+    localStorageMock.getItem.mockReturnValue(null)
+    mockUseCompletion.mockReturnValue({
+      completion: '',
+      complete: mockComplete,
+      isLoading: false,
+      error: new Error('API error'),
+    })
+
+    render(<AiSummary slug="test" content="Test article content" />)
+    expect(screen.getByText(/摘要生成失败/)).toBeInTheDocument()
   })
 })

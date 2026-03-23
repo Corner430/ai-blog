@@ -10,18 +10,38 @@ interface SearchResult {
   score: number
 }
 
+interface KbarDocument {
+  slug: string
+  title: string
+  summary?: string
+  body?: string
+}
+
 interface AiSearchProps {
   isOpen: boolean
   onClose: () => void
 }
+
+const aiEnabled = !!process.env.NEXT_PUBLIC_AI_ENABLED
 
 export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [kbarDocs, setKbarDocs] = useState<KbarDocument[] | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+
+  // Load fallback search.json for keyword search
+  useEffect(() => {
+    if (!aiEnabled) {
+      fetch('/search.json')
+        .then((res) => res.json())
+        .then((data) => setKbarDocs(data))
+        .catch(() => setKbarDocs([]))
+    }
+  }, [])
 
   // Focus input when modal opens
   useEffect(() => {
@@ -45,35 +65,68 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  const performSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults([])
-      setHasSearched(false)
-      return
-    }
+  const keywordSearch = useCallback(
+    (searchQuery: string): SearchResult[] => {
+      if (!kbarDocs || !searchQuery.trim()) return []
+      const q = searchQuery.toLowerCase()
+      return kbarDocs
+        .filter(
+          (doc) =>
+            doc.title?.toLowerCase().includes(q) ||
+            doc.summary?.toLowerCase().includes(q) ||
+            doc.body?.toLowerCase().includes(q)
+        )
+        .slice(0, 10)
+        .map((doc) => ({
+          slug: doc.slug,
+          title: doc.title,
+          summary: doc.summary || '',
+          score: 1,
+        }))
+    },
+    [kbarDocs]
+  )
 
-    setIsSearching(true)
-    setHasSearched(true)
-
-    try {
-      const res = await fetch('/api/ai/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        setResults(data.results || [])
-      } else {
+  const performSearch = useCallback(
+    async (searchQuery: string) => {
+      if (!searchQuery.trim()) {
         setResults([])
+        setHasSearched(false)
+        return
       }
-    } catch {
-      setResults([])
-    } finally {
-      setIsSearching(false)
-    }
-  }, [])
+
+      setIsSearching(true)
+      setHasSearched(true)
+
+      if (!aiEnabled) {
+        // Keyword fallback
+        setResults(keywordSearch(searchQuery))
+        setIsSearching(false)
+        return
+      }
+
+      try {
+        const res = await fetch('/api/ai/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: searchQuery }),
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setResults(data.results || [])
+        } else {
+          // Fall back to keyword search on API error
+          setResults(keywordSearch(searchQuery))
+        }
+      } catch {
+        setResults(keywordSearch(searchQuery))
+      } finally {
+        setIsSearching(false)
+      }
+    },
+    [keywordSearch]
+  )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -89,7 +142,7 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       performSearch(value)
-    }, 300)
+    }, aiEnabled ? 500 : 200)
   }
 
   if (!isOpen) return null
@@ -123,7 +176,7 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
               ref={inputRef}
               value={query}
               onChange={handleChange}
-              placeholder="AI 语义搜索文章..."
+              placeholder={aiEnabled ? 'AI 语义搜索文章...' : '搜索文章...'}
               className="w-full border-0 bg-transparent px-3 py-4 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 focus:outline-none dark:text-gray-100"
             />
             <kbd className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-400 dark:border-gray-600">
@@ -135,15 +188,11 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
         {/* Results */}
         <div className="max-h-[50vh] overflow-y-auto px-2 py-2">
           {isSearching && (
-            <div className="px-4 py-8 text-center text-sm text-gray-400">
-              搜索中...
-            </div>
+            <div className="px-4 py-8 text-center text-sm text-gray-400">搜索中...</div>
           )}
 
           {!isSearching && hasSearched && results.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-gray-400">
-              未找到相关文章
-            </div>
+            <div className="px-4 py-8 text-center text-sm text-gray-400">未找到相关文章</div>
           )}
 
           {!isSearching &&
@@ -157,9 +206,11 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {result.title}
                 </div>
-                <div className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-                  {result.summary}
-                </div>
+                {result.summary && (
+                  <div className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+                    {result.summary}
+                  </div>
+                )}
               </Link>
             ))}
         </div>

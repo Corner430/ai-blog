@@ -11,6 +11,19 @@ global.fetch = jest.fn()
 describe('AiSearch', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    // Default: resolve search.json with empty array (for fallback loading)
+    ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url === '/search.json') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [],
+        })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ results: [] }),
+      })
+    })
   })
 
   it('renders search modal when open', () => {
@@ -24,11 +37,6 @@ describe('AiSearch', () => {
   })
 
   it('shows empty state when no results', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({ results: [] }),
-    })
-
     render(<AiSearch isOpen={true} onClose={jest.fn()} />)
     const input = screen.getByPlaceholderText(/搜索/)
     fireEvent.change(input, { target: { value: 'some query' } })
