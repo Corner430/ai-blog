@@ -16,11 +16,13 @@ interface LayoutProps {
   children: ReactNode
   next?: { path: string; title: string }
   prev?: { path: string; title: string }
+  articleRawContent?: string
 }
 
-export default function PostLayout({ content, next, prev, children }: LayoutProps) {
+export default function PostLayout({ content, next, prev, children, articleRawContent }: LayoutProps) {
   const { path, slug, date, title } = content
-  const articleContent = (content as any).body?.raw || ''
+  const articleContent = articleRawContent || ''
+  const aiEnabled = !!process.env.NEXT_PUBLIC_AI_ENABLED
 
   return (
     <SectionContainer>
@@ -42,7 +44,7 @@ export default function PostLayout({ content, next, prev, children }: LayoutProp
               </div>
             </div>
           </header>
-          <AiSummary slug={slug} content={articleContent} />
+          {aiEnabled && <AiSummary slug={slug} content={articleContent} />}
           <div className="grid-rows-[auto_1fr] divide-y divide-gray-200 pb-8 xl:divide-y-0 dark:divide-gray-700">
             <div className="divide-y divide-gray-200 xl:col-span-3 xl:row-span-2 xl:pb-0 dark:divide-gray-700">
               <div className="prose dark:prose-invert max-w-none pt-10 pb-8">{children}</div>
@@ -81,7 +83,7 @@ export default function PostLayout({ content, next, prev, children }: LayoutProp
           </div>
         </div>
       </article>
-      <AiChat slug={slug} articleContent={articleContent} />
+      {aiEnabled && <AiChat slug={slug} articleContent={articleContent} />}
     </SectionContainer>
   )
 }

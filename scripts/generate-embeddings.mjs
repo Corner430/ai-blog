@@ -36,7 +36,10 @@ async function main() {
     const slug = blog.slug || blog._raw?.flattenedPath
     const title = blog.title || ''
     const summary = blog.summary || ''
-    const text = `${title} ${summary}`.trim()
+    const bodyRaw = blog.body?.raw || ''
+    // Include first 500 chars of body for better search quality
+    const bodySnippet = bodyRaw.slice(0, 500)
+    const text = `${title} ${summary} ${bodySnippet}`.trim()
 
     if (!text) {
       console.warn(`[generate-embeddings] Skipping article with no title/summary: ${slug}`)

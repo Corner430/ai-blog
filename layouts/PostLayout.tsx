@@ -29,12 +29,14 @@ interface LayoutProps {
   next?: { path: string; title: string }
   prev?: { path: string; title: string }
   children: ReactNode
+  articleRawContent?: string
 }
 
-export default function PostLayout({ content, authorDetails, next, prev, children }: LayoutProps) {
+export default function PostLayout({ content, authorDetails, next, prev, children, articleRawContent }: LayoutProps) {
   const { filePath, path, slug, date, title, tags } = content
   const basePath = path.split('/')[0]
-  const articleContent = (content as any).body?.raw || ''
+  const articleContent = articleRawContent || ''
+  const aiEnabled = !!process.env.NEXT_PUBLIC_AI_ENABLED
 
   return (
     <SectionContainer>
@@ -58,7 +60,7 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
               </div>
             </div>
           </header>
-          <AiSummary slug={slug} content={articleContent} />
+          {aiEnabled && <AiSummary slug={slug} content={articleContent} />}
           <div className="grid-rows-[auto_1fr] divide-y divide-gray-200 pb-8 xl:grid xl:grid-cols-4 xl:gap-x-6 xl:divide-y-0 dark:divide-gray-700">
             <dl className="pt-6 pb-10 xl:border-b xl:border-gray-200 xl:pt-11 xl:dark:border-gray-700">
               <dt className="sr-only">Authors</dt>
@@ -167,7 +169,7 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
           </div>
         </div>
       </article>
-      <AiChat slug={slug} articleContent={articleContent} />
+      {aiEnabled && <AiChat slug={slug} articleContent={articleContent} />}
     </SectionContainer>
   )
 }

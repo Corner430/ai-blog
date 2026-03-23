@@ -17,11 +17,13 @@ interface LayoutProps {
   children: ReactNode
   next?: { path: string; title: string }
   prev?: { path: string; title: string }
+  articleRawContent?: string
 }
 
-export default function PostMinimal({ content, next, prev, children }: LayoutProps) {
+export default function PostMinimal({ content, next, prev, children, articleRawContent }: LayoutProps) {
   const { slug, title, images } = content
-  const articleContent = (content as any).body?.raw || ''
+  const articleContent = articleRawContent || ''
+  const aiEnabled = !!process.env.NEXT_PUBLIC_AI_ENABLED
   const displayImage =
     images && images.length > 0 ? images[0] : 'https://picsum.photos/seed/picsum/800/400'
 
@@ -42,7 +44,7 @@ export default function PostMinimal({ content, next, prev, children }: LayoutPro
               <PageTitle>{title}</PageTitle>
             </div>
           </div>
-          <AiSummary slug={slug} content={articleContent} />
+          {aiEnabled && <AiSummary slug={slug} content={articleContent} />}
           <div className="prose dark:prose-invert max-w-none py-4">{children}</div>
           {siteMetadata.comments && (
             <div className="pt-6 pb-6 text-center text-gray-700 dark:text-gray-300" id="comment">
@@ -77,7 +79,7 @@ export default function PostMinimal({ content, next, prev, children }: LayoutPro
           </footer>
         </div>
       </article>
-      <AiChat slug={slug} articleContent={articleContent} />
+      {aiEnabled && <AiChat slug={slug} articleContent={articleContent} />}
     </SectionContainer>
   )
 }

@@ -66,6 +66,9 @@ module.exports = () => {
   return plugins.reduce((acc, next) => next(acc), {
     output,
     basePath,
+    env: {
+      NEXT_PUBLIC_AI_ENABLED: process.env.HUNYUAN_API_KEY ? 'true' : '',
+    },
     reactStrictMode: true,
     trailingSlash: true,
     turbopack: {
