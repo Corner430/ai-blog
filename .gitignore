@@ -49,5 +49,10 @@ yarn-error.log*
 # CodeBuddy
 .codebuddy/
 
+# Playwright
+test-results/
+playwright-report/
+/blob-report/
+
 # Darwin artifacts
 .darwin/
