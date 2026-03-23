@@ -54,18 +54,12 @@ const securityHeaders = [
   },
 ]
 
-const output = process.env.EXPORT ? 'export' : undefined
-const basePath = process.env.BASE_PATH || undefined
-const unoptimized = process.env.UNOPTIMIZED ? true : undefined
-
 /**
  * @type {import('next/dist/next-server/server/config').NextConfig}
  **/
 module.exports = () => {
   const plugins = [withContentlayer, withBundleAnalyzer]
   return plugins.reduce((acc, next) => next(acc), {
-    output,
-    basePath,
     env: {
       NEXT_PUBLIC_AI_ENABLED: process.env.HUNYUAN_API_KEY ? 'true' : '',
     },
@@ -88,7 +82,6 @@ module.exports = () => {
           hostname: 'picsum.photos',
         },
       ],
-      unoptimized,
     },
     async headers() {
       return [
