@@ -45,3 +45,9 @@ yarn-error.log*
 
 # Contentlayer
 .contentlayer
+
+# CodeBuddy
+.codebuddy/
+
+# Darwin artifacts
+.darwin/
