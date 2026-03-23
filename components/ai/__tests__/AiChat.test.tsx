@@ -6,6 +6,11 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import AiChat from '../AiChat'
 
+// Mock ai module to avoid TransformStream not defined in jsdom
+jest.mock('ai', () => ({
+  DefaultChatTransport: jest.fn(),
+}))
+
 // Mock useChat from ai/react
 jest.mock('@ai-sdk/react', () => ({
   useChat: jest.fn(() => ({
