@@ -9,6 +9,7 @@ export default function WritingPage() {
 
   const { completion, complete, isLoading, error, setCompletion } = useCompletion({
     api: '/api/ai/writing',
+    streamProtocol: 'text',
   })
 
   const handlePolish = async () => {
