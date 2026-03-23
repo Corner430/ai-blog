@@ -45,7 +45,9 @@ describe('POST /api/ai/cover/submit', () => {
     mockIsImageAiEnabled.mockReturnValue(true)
     mockSubmitImageJob.mockResolvedValue({ jobId: 'job-123' })
 
-    const res = await submitPOST(createPostRequest({ title: 'Test Article', summary: 'A test summary' }))
+    const res = await submitPOST(
+      createPostRequest({ title: 'Test Article', summary: 'A test summary' })
+    )
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.jobId).toBe('job-123')

@@ -49,7 +49,9 @@ describe('POST /api/ai/tags', () => {
       text: '["JavaScript", "React", "Next.js"]',
     })
 
-    const res = await POST(createRequest({ content: 'Article about JavaScript and React with Next.js' }))
+    const res = await POST(
+      createRequest({ content: 'Article about JavaScript and React with Next.js' })
+    )
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.tags).toEqual(['JavaScript', 'React', 'Next.js'])

@@ -25,7 +25,12 @@ describe('Auto-tagging Admin Page', () => {
         Promise.resolve({
           articles: [
             { filename: 'hello.mdx', title: 'Hello World', tags: ['blog'], content: 'Content' },
-            { filename: 'react.mdx', title: 'React Guide', tags: ['react'], content: 'React content' },
+            {
+              filename: 'react.mdx',
+              title: 'React Guide',
+              tags: ['react'],
+              content: 'React content',
+            },
           ],
         }),
     })
@@ -45,7 +50,12 @@ describe('Auto-tagging Admin Page', () => {
       json: () =>
         Promise.resolve({
           articles: [
-            { filename: 'hello.mdx', title: 'Hello World', tags: ['blog', 'intro'], content: 'Content' },
+            {
+              filename: 'hello.mdx',
+              title: 'Hello World',
+              tags: ['blog', 'intro'],
+              content: 'Content',
+            },
           ],
         }),
     })
@@ -78,9 +88,7 @@ describe('Auto-tagging Admin Page', () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            articles: [
-              { filename: 'hello.mdx', title: 'Hello', tags: [], content: 'JS content' },
-            ],
+            articles: [{ filename: 'hello.mdx', title: 'Hello', tags: [], content: 'JS content' }],
           }),
       })
       .mockResolvedValueOnce({
@@ -109,9 +117,7 @@ describe('Auto-tagging Admin Page', () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            articles: [
-              { filename: 'hello.mdx', title: 'Hello', tags: [], content: 'Content' },
-            ],
+            articles: [{ filename: 'hello.mdx', title: 'Hello', tags: [], content: 'Content' }],
           }),
       })
       .mockResolvedValueOnce({
@@ -146,9 +152,7 @@ describe('Auto-tagging Admin Page', () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            articles: [
-              { filename: 'hello.mdx', title: 'Hello', tags: [], content: 'Content' },
-            ],
+            articles: [{ filename: 'hello.mdx', title: 'Hello', tags: [], content: 'Content' }],
           }),
       })
       .mockResolvedValueOnce({
@@ -194,9 +198,7 @@ describe('Auto-tagging Admin Page', () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            articles: [
-              { filename: 'hello.mdx', title: 'Hello', tags: [], content: 'Content' },
-            ],
+            articles: [{ filename: 'hello.mdx', title: 'Hello', tags: [], content: 'Content' }],
           }),
       })
       .mockResolvedValueOnce({

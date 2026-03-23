@@ -31,7 +31,7 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
   const [hasSearched, setHasSearched] = useState(false)
   const [kbarDocs, setKbarDocs] = useState<KbarDocument[] | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
 
   // Load fallback search.json for keyword search
   useEffect(() => {
@@ -140,9 +140,12 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
 
     // Debounced search
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      performSearch(value)
-    }, aiEnabled ? 500 : 200)
+    debounceRef.current = setTimeout(
+      () => {
+        performSearch(value)
+      },
+      aiEnabled ? 500 : 200
+    )
   }
 
   if (!isOpen) return null
@@ -153,6 +156,7 @@ export default function AiSearch({ isOpen, onClose }: AiSearchProps) {
       className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh]"
     >
       {/* Backdrop */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}

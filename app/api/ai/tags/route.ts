@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       tags = JSON.parse(result.text)
     } catch {
       // Try to extract JSON array from response
-      const match = result.text.match(/\[.*\]/s)
+      const match = result.text.match(/\[[\s\S]*\]/)
       if (match) {
         tags = JSON.parse(match[0])
       } else {

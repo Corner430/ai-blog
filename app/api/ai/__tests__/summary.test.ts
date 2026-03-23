@@ -56,7 +56,9 @@ describe('POST /api/ai/summary', () => {
       toTextStreamResponse: () => mockResponse,
     })
 
-    const res = await POST(createRequest({ content: 'Hello world article content', slug: 'test-article' }))
+    const res = await POST(
+      createRequest({ content: 'Hello world article content', slug: 'test-article' })
+    )
     expect(res).toBe(mockResponse)
     expect(mockStreamText).toHaveBeenCalledTimes(1)
   })

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, FormEvent } from 'react'
 import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
 
 interface AiChatProps {
   slug: string
@@ -13,11 +14,12 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, sendMessage, status, setMessages, error, regenerate } =
-    useChat({
+  const { messages, sendMessage, status, setMessages, error, regenerate } = useChat({
+    transport: new DefaultChatTransport({
       api: '/api/ai/chat',
       body: { articleContent },
-    })
+    }),
+  })
 
   const isLoading = status === 'streaming' || status === 'submitted'
 
@@ -47,15 +49,27 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
       <button
         data-testid="ai-chat-toggle"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed right-8 bottom-24 z-50 rounded-full bg-primary-500 p-3 text-white shadow-lg transition-all hover:bg-primary-600 md:bottom-28"
+        className="bg-primary-500 hover:bg-primary-600 fixed right-8 bottom-24 z-50 rounded-full p-3 text-white shadow-lg transition-all md:bottom-28"
         aria-label="AI 问答"
       >
         {isOpen ? (
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="h-6 w-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="h-6 w-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -69,7 +83,7 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
       {isOpen && (
         <div
           data-testid="ai-chat-panel"
-          className="fixed right-4 bottom-40 z-50 flex h-[480px] w-[360px] flex-col rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 md:right-8 md:bottom-44"
+          className="fixed right-4 bottom-40 z-50 flex h-[480px] w-[360px] flex-col rounded-lg border border-gray-200 bg-white shadow-xl md:right-8 md:bottom-44 dark:border-gray-700 dark:bg-gray-900"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
@@ -78,7 +92,13 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
               onClick={() => setIsOpen(false)}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -87,15 +107,14 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-3">
             {messages.length === 0 && (
-              <p className="text-center text-sm text-gray-400">
-                针对这篇文章提问吧
-              </p>
+              <p className="text-center text-sm text-gray-400">针对这篇文章提问吧</p>
             )}
             {messages.map((msg) => {
-              const text = msg.parts
-                ?.filter((p) => p.type === 'text')
-                .map((p) => p.text)
-                .join('') || ''
+              const text =
+                msg.parts
+                  ?.filter((p) => p.type === 'text')
+                  .map((p) => p.text)
+                  .join('') || ''
               if (!text) return null
               return (
                 <div
@@ -145,13 +164,13 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="输入你的问题..."
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                className="focus:border-primary-500 focus:ring-primary-500 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-1 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 disabled={isLoading}
               />
               <button
                 type="submit"
                 disabled={isLoading || !input.trim()}
-                className="rounded-md bg-primary-500 px-3 py-2 text-sm text-white hover:bg-primary-600 disabled:opacity-50"
+                className="bg-primary-500 hover:bg-primary-600 rounded-md px-3 py-2 text-sm text-white disabled:opacity-50"
               >
                 发送
               </button>

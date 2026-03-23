@@ -58,7 +58,12 @@ export default function TagsPage() {
   }
 
   const handleGenerateTags = async (article: Article) => {
-    updateState(article.filename, { loading: true, error: '', suggestedTags: [], writeSuccess: false })
+    updateState(article.filename, {
+      loading: true,
+      error: '',
+      suggestedTags: [],
+      writeSuccess: false,
+    })
 
     try {
       const res = await fetch('/api/ai/tags', {
@@ -114,7 +119,7 @@ export default function TagsPage() {
   if (loadingArticles) {
     return (
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-3xl font-bold leading-9 tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl">
+        <h1 className="text-3xl leading-9 font-bold tracking-tight text-gray-900 sm:text-4xl dark:text-gray-100">
           自动标签管理
         </h1>
         <p className="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
@@ -124,7 +129,7 @@ export default function TagsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-3xl font-bold leading-9 tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl">
+      <h1 className="text-3xl leading-9 font-bold tracking-tight text-gray-900 sm:text-4xl dark:text-gray-100">
         自动标签管理
       </h1>
 
@@ -161,7 +166,7 @@ export default function TagsPage() {
                   <button
                     onClick={() => handleGenerateTags(article)}
                     disabled={state.loading}
-                    className="rounded-md bg-primary-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+                    className="bg-primary-500 hover:bg-primary-600 rounded-md px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50"
                   >
                     {state.loading ? '生成中...' : '生成标签'}
                   </button>

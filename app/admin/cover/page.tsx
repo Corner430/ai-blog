@@ -29,40 +29,36 @@ export default function CoverPage() {
     return cleanup
   }, [cleanup])
 
-  const pollJob = useCallback(
-    async (jobId: string, count: number) => {
+  const pollJob = useCallback(async (jobId: string, count: number) => {
+    if (cancelledRef.current) return
+
+    if (count >= MAX_POLLS) {
+      setStatus('timeout')
+      return
+    }
+
+    try {
+      const queryRes = await fetch(`/api/ai/cover/query?jobId=${jobId}`)
+      const result = await queryRes.json()
+
       if (cancelledRef.current) return
 
-      if (count >= MAX_POLLS) {
-        setStatus('timeout')
-        return
+      if (result.status === 'done' && result.imageUrl) {
+        setImageUrl(result.imageUrl)
+        setStatus('done')
+      } else if (result.status === 'failed') {
+        setErrorMsg(result.error || '生成失败')
+        setStatus('failed')
+      } else {
+        timerRef.current = setTimeout(() => pollJob(jobId, count + 1), POLL_INTERVAL)
       }
-
-      try {
-        const queryRes = await fetch(`/api/ai/cover/query?jobId=${jobId}`)
-        const result = await queryRes.json()
-
-        if (cancelledRef.current) return
-
-        if (result.status === 'done' && result.imageUrl) {
-          setImageUrl(result.imageUrl)
-          setStatus('done')
-        } else if (result.status === 'failed') {
-          setErrorMsg(result.error || '生成失败')
-          setStatus('failed')
-        } else {
-          timerRef.current = setTimeout(() => pollJob(jobId, count + 1), POLL_INTERVAL)
-        }
-      } catch {
-        if (!cancelledRef.current) {
-          setErrorMsg('查询失败')
-          setStatus('failed')
-        }
+    } catch {
+      if (!cancelledRef.current) {
+        setErrorMsg('查询失败')
+        setStatus('failed')
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  )
+    }
+  }, [])
 
   const handleGenerate = async () => {
     if (!title.trim()) return
@@ -126,43 +122,51 @@ export default function CoverPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-3xl font-bold leading-9 tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl">
+      <h1 className="text-3xl leading-9 font-bold tracking-tight text-gray-900 sm:text-4xl dark:text-gray-100">
         封面图生成
       </h1>
 
       <div className="mt-8 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label
+            htmlFor="cover-title"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
             文章标题 *
           </label>
           <input
+            id="cover-title"
             type="text"
             placeholder="请输入文章标题"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={isLoading}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="focus:border-primary-500 focus:ring-primary-500 mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:ring-1 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label
+            htmlFor="cover-summary"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
             文章摘要（选填）
           </label>
           <textarea
+            id="cover-summary"
             placeholder="请输入文章摘要"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             disabled={isLoading}
             rows={3}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="focus:border-primary-500 focus:ring-primary-500 mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:ring-1 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
 
         <button
           onClick={handleGenerate}
           disabled={!title.trim() || isLoading}
-          className="rounded-md bg-primary-500 px-4 py-2 text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-primary-500 hover:bg-primary-600 rounded-md px-4 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? '生成中...' : '生成封面'}
         </button>
@@ -172,9 +176,7 @@ export default function CoverPage() {
         <p className="mt-4 text-amber-600 dark:text-amber-400">生成超时，请重试</p>
       )}
 
-      {status === 'failed' && (
-        <p className="mt-4 text-red-600 dark:text-red-400">{errorMsg}</p>
-      )}
+      {status === 'failed' && <p className="mt-4 text-red-600 dark:text-red-400">{errorMsg}</p>}
 
       {status === 'done' && imageUrl && (
         <div className="mt-6 space-y-4">

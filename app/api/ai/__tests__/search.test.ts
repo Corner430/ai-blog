@@ -12,9 +12,7 @@ jest.mock('@/lib/embeddings', () => ({
 }))
 
 jest.mock('fs', () => ({
-  readFileSync: jest.fn(() =>
-    JSON.stringify({ articles: [] })
-  ),
+  readFileSync: jest.fn(() => JSON.stringify({ articles: [] })),
 }))
 
 import { POST } from '../search/route'

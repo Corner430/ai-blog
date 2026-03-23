@@ -23,8 +23,16 @@ export async function POST(request: Request) {
   }
 
   // Security: only accept .mdx files without path traversal
-  if (!filename.endsWith('.mdx') || filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
-    return NextResponse.json({ error: 'Invalid filename. Only .mdx files are accepted.' }, { status: 400 })
+  if (
+    !filename.endsWith('.mdx') ||
+    filename.includes('/') ||
+    filename.includes('\\') ||
+    filename.includes('..')
+  ) {
+    return NextResponse.json(
+      { error: 'Invalid filename. Only .mdx files are accepted.' },
+      { status: 400 }
+    )
   }
 
   const filePath = path.join(BLOG_DIR, filename)

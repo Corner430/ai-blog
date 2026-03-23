@@ -27,7 +27,9 @@ describe('lib/hunyuan-image', () => {
   describe('submitImageJob', () => {
     it('rejects when title is missing', async () => {
       process.env.HUNYUAN_API_KEY = 'test-key'
-      await expect(submitImageJob({ title: '', summary: 'test' })).rejects.toThrow('title is required')
+      await expect(submitImageJob({ title: '', summary: 'test' })).rejects.toThrow(
+        'title is required'
+      )
     })
   })
 

@@ -23,7 +23,7 @@ const features = [
 export default function AdminPage() {
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-3xl font-bold leading-9 tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl sm:leading-10 md:text-5xl md:leading-14">
+      <h1 className="text-3xl leading-9 font-bold tracking-tight text-gray-900 sm:text-4xl sm:leading-10 md:text-5xl md:leading-14 dark:text-gray-100">
         管理中心
       </h1>
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -31,7 +31,7 @@ export default function AdminPage() {
           <Link
             key={feature.href}
             href={feature.href}
-            className="block rounded-lg border border-gray-200 p-6 transition-colors hover:border-primary-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-primary-400 dark:hover:bg-gray-800"
+            className="hover:border-primary-500 dark:hover:border-primary-400 block rounded-lg border border-gray-200 p-6 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {feature.name}
