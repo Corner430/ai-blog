@@ -1,20 +1,22 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const isCI = !!process.env.CI
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 1,
+  workers: isCI ? 1 : undefined,
   reporter: 'html',
-  timeout: 60000,
+  timeout: isCI ? 90000 : 60000,
   expect: {
-    timeout: 15000,
+    timeout: isCI ? 20000 : 15000,
   },
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
-    navigationTimeout: 30000,
+    navigationTimeout: isCI ? 60000 : 30000,
   },
   projects: [
     {
@@ -23,9 +25,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: process.env.CI ? 'npx next build && npx next start' : 'npx next dev',
+    command: isCI ? 'npx next build && npx next start' : 'npx next dev',
     url: 'http://localhost:3000',
-    timeout: process.env.CI ? 300000 : 120000,
-    reuseExistingServer: !process.env.CI,
+    timeout: isCI ? 300000 : 120000,
+    reuseExistingServer: !isCI,
   },
 })

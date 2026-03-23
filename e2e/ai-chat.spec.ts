@@ -68,7 +68,7 @@ test.describe('AI Chat', () => {
   })
 
   test('should show error and retry button on API error', async ({ page }) => {
-    await page.route('**/api/chat', async (route) => {
+    await page.route('**/api/ai/chat', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',

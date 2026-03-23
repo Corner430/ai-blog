@@ -5,7 +5,7 @@ import { Page } from '@playwright/test'
  * The useChat hook with `toUIMessageStreamResponse()` uses SSE format with JSON chunks.
  */
 export async function mockChatStream(page: Page, responseText: string, delay?: number) {
-  await page.route('**/api/chat', async (route) => {
+  await page.route('**/api/ai/chat', async (route) => {
     if (delay) {
       await new Promise((r) => setTimeout(r, delay))
     }
