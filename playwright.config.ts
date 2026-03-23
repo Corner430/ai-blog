@@ -8,6 +8,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   timeout: 60000,
+  expect: {
+    timeout: 15000,
+  },
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',

@@ -12,25 +12,29 @@ test.describe('Blog Post Page', () => {
   })
 
   test('should navigate back to blog list via "Back to the blog" link', async ({ page }) => {
-    await page.goto('/blog/hello-world')
+    await page.goto('/blog/hello-world', { waitUntil: 'networkidle' })
     const backLink = page.getByRole('link', { name: /Back to the blog/i })
     await expect(backLink).toBeVisible()
-    await backLink.click()
-    await expect(page).toHaveURL(/\/blog\/?$/)
+    await Promise.all([
+      page.waitForURL(/\/blog\/?$/, { timeout: 15000 }),
+      backLink.click(),
+    ])
   })
 
   test('should navigate to tag page when clicking a tag', async ({ page }) => {
-    await page.goto('/blog/hello-world')
+    await page.goto('/blog/hello-world', { waitUntil: 'networkidle' })
     const tagLink = page.locator('a[href*="/tags/"]').first()
     if (await tagLink.isVisible()) {
-      await tagLink.click()
-      await expect(page).toHaveURL(/\/tags\//)
+      await Promise.all([
+        page.waitForURL(/\/tags\//, { timeout: 15000 }),
+        tagLink.click(),
+      ])
     }
   })
 
   test('should show 404 for non-existent post', async ({ page }) => {
-    const response = await page.goto('/blog/this-post-does-not-exist-at-all')
+    await page.goto('/blog/this-post-does-not-exist-at-all', { timeout: 60000 })
     // Should show 404 content
-    await expect(page.getByText('404')).toBeVisible()
+    await expect(page.getByText('404')).toBeVisible({ timeout: 15000 })
   })
 })

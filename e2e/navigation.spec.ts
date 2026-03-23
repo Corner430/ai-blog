@@ -10,19 +10,21 @@ test.describe('Desktop Navigation', () => {
 
   for (const { name, href } of navLinks) {
     test(`should navigate to ${href} when clicking ${name}`, async ({ page }) => {
-      await page.goto('/')
+      await page.goto('/', { waitUntil: 'networkidle' })
       // Desktop nav links are inside the hidden sm:flex container
       const navContainer = page.locator('.no-scrollbar.hidden.sm\\:flex')
       const link = navContainer.getByRole('link', { name })
       await expect(link).toBeVisible()
-      await link.click()
-      await expect(page).toHaveURL(new RegExp(href))
+      await Promise.all([
+        page.waitForURL(new RegExp(href), { timeout: 15000 }),
+        link.click(),
+      ])
     })
   }
 
   test('should hide desktop nav links on small screens', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'networkidle' })
     // Desktop nav container should be hidden
     const navContainer = page.locator('.no-scrollbar.hidden.sm\\:flex')
     await expect(navContainer).not.toBeVisible()

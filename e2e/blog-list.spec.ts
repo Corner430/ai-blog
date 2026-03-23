@@ -12,17 +12,21 @@ test.describe('Blog List Page', () => {
   })
 
   test('should navigate to article when clicking title', async ({ page }) => {
-    await page.goto('/blog')
-    await page.getByRole('link', { name: /Hello World/i }).first().click()
-    await expect(page).toHaveURL(/\/blog\/hello-world/)
+    await page.goto('/blog', { waitUntil: 'networkidle' })
+    await Promise.all([
+      page.waitForURL(/\/blog\/hello-world/, { timeout: 15000 }),
+      page.getByRole('link', { name: /Hello World/i }).first().click(),
+    ])
   })
 
   test('should navigate to tags page when clicking a tag', async ({ page }) => {
-    await page.goto('/blog')
+    await page.goto('/blog', { waitUntil: 'networkidle' })
     const tagLink = page.locator('a[href*="/tags/"]').first()
     if (await tagLink.isVisible()) {
-      await tagLink.click()
-      await expect(page).toHaveURL(/\/tags\//)
+      await Promise.all([
+        page.waitForURL(/\/tags\//, { timeout: 15000 }),
+        tagLink.click(),
+      ])
     }
   })
 

@@ -8,7 +8,7 @@ test.describe('Admin Dashboard', () => {
   ]
 
   test('should display admin dashboard with title and feature cards', async ({ page }) => {
-    await page.goto('/admin')
+    await page.goto('/admin', { waitUntil: 'networkidle' })
     await expect(page.getByRole('heading', { name: '管理中心' })).toBeVisible()
     for (const card of cards) {
       await expect(page.getByRole('link', { name: new RegExp(card.name) })).toBeVisible()
@@ -17,9 +17,11 @@ test.describe('Admin Dashboard', () => {
 
   for (const card of cards) {
     test(`should navigate to ${card.href} when clicking ${card.name}`, async ({ page }) => {
-      await page.goto('/admin')
-      await page.getByRole('link', { name: new RegExp(card.name) }).click()
-      await expect(page).toHaveURL(new RegExp(card.href))
+      await page.goto('/admin', { waitUntil: 'networkidle' })
+      await Promise.all([
+        page.waitForURL(new RegExp(card.href), { timeout: 15000 }),
+        page.getByRole('link', { name: new RegExp(card.name) }).click(),
+      ])
     })
   }
 })

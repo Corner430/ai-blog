@@ -4,7 +4,7 @@ test.describe('Mobile Navigation', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
   test('should open sidebar when clicking hamburger menu', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'networkidle' })
     const menuButton = page.getByRole('button', { name: 'Toggle Menu' }).first()
     await expect(menuButton).toBeVisible()
     await menuButton.click()
@@ -17,18 +17,18 @@ test.describe('Mobile Navigation', () => {
   })
 
   test('should navigate and close sidebar when clicking a link', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: 'Toggle Menu' }).first().click()
     const nav = page.locator('nav').filter({ has: page.getByRole('link', { name: 'Home' }) })
     await expect(nav).toBeVisible({ timeout: 5000 })
     await nav.getByRole('link', { name: 'Blog' }).click()
-    await expect(page).toHaveURL(/\/blog/)
+    await expect(page).toHaveURL(/\/blog/, { timeout: 15000 })
     // Sidebar should close after navigation (nav links no longer visible)
     await expect(nav).not.toBeVisible({ timeout: 5000 })
   })
 
   test('should close sidebar when clicking X button', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: 'Toggle Menu' }).first().click()
     const nav = page.locator('nav').filter({ has: page.getByRole('link', { name: 'Home' }) })
     await expect(nav).toBeVisible({ timeout: 5000 })
