@@ -13,37 +13,27 @@ describe('lib/hunyuan-image', () => {
   })
 
   describe('isImageAiEnabled', () => {
-    it('returns false when TENCENT_SECRET_ID is not set', () => {
-      delete process.env.TENCENT_SECRET_ID
-      delete process.env.TENCENT_SECRET_KEY
+    it('returns false when HUNYUAN_API_KEY is not set', () => {
+      delete process.env.HUNYUAN_API_KEY
       expect(isImageAiEnabled()).toBe(false)
     })
 
-    it('returns false when TENCENT_SECRET_KEY is not set', () => {
-      process.env.TENCENT_SECRET_ID = 'test-id'
-      delete process.env.TENCENT_SECRET_KEY
-      expect(isImageAiEnabled()).toBe(false)
-    })
-
-    it('returns true when both secrets are set', () => {
-      process.env.TENCENT_SECRET_ID = 'test-id'
-      process.env.TENCENT_SECRET_KEY = 'test-key'
+    it('returns true when HUNYUAN_API_KEY is set', () => {
+      process.env.HUNYUAN_API_KEY = 'test-key'
       expect(isImageAiEnabled()).toBe(true)
     })
   })
 
   describe('submitImageJob', () => {
     it('rejects when title is missing', async () => {
-      process.env.TENCENT_SECRET_ID = 'test-id'
-      process.env.TENCENT_SECRET_KEY = 'test-key'
+      process.env.HUNYUAN_API_KEY = 'test-key'
       await expect(submitImageJob({ title: '', summary: 'test' })).rejects.toThrow('title is required')
     })
   })
 
   describe('queryImageJob', () => {
     it('rejects when jobId is missing', async () => {
-      process.env.TENCENT_SECRET_ID = 'test-id'
-      process.env.TENCENT_SECRET_KEY = 'test-key'
+      process.env.HUNYUAN_API_KEY = 'test-key'
       await expect(queryImageJob('')).rejects.toThrow('jobId is required')
     })
   })

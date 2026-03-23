@@ -48,7 +48,6 @@
     "remark-github-blockquote-alert": "^2.0.1",
     "remark-math": "^6.0.0",
     "tailwindcss": "^4.1.18",
-    "tencentcloud-sdk-nodejs-hunyuan": "^4.1.188",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
