@@ -9,6 +9,8 @@ import PageTitle from '@/components/PageTitle'
 import SectionContainer from '@/components/SectionContainer'
 import siteMetadata from '@/data/siteMetadata'
 import ScrollTopAndComment from '@/components/ScrollTopAndComment'
+import AiSummary from '@/components/ai/AiSummary'
+import AiChat from '@/components/ai/AiChat'
 
 interface LayoutProps {
   content: CoreContent<Blog>
@@ -19,6 +21,7 @@ interface LayoutProps {
 
 export default function PostMinimal({ content, next, prev, children }: LayoutProps) {
   const { slug, title, images } = content
+  const articleContent = (content as any).body?.raw || ''
   const displayImage =
     images && images.length > 0 ? images[0] : 'https://picsum.photos/seed/picsum/800/400'
 
@@ -39,6 +42,7 @@ export default function PostMinimal({ content, next, prev, children }: LayoutPro
               <PageTitle>{title}</PageTitle>
             </div>
           </div>
+          <AiSummary slug={slug} content={articleContent} />
           <div className="prose dark:prose-invert max-w-none py-4">{children}</div>
           {siteMetadata.comments && (
             <div className="pt-6 pb-6 text-center text-gray-700 dark:text-gray-300" id="comment">
@@ -73,6 +77,7 @@ export default function PostMinimal({ content, next, prev, children }: LayoutPro
           </footer>
         </div>
       </article>
+      <AiChat slug={slug} articleContent={articleContent} />
     </SectionContainer>
   )
 }

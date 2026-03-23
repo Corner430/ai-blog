@@ -1,17 +1,29 @@
-import { AlgoliaButton } from 'pliny/search/AlgoliaButton'
-import { KBarButton } from 'pliny/search/KBarButton'
-import siteMetadata from '@/data/siteMetadata'
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import AiSearch from '@/components/ai/AiSearch'
 
 const SearchButton = () => {
-  if (
-    siteMetadata.search &&
-    (siteMetadata.search.provider === 'algolia' || siteMetadata.search.provider === 'kbar')
-  ) {
-    const SearchButtonWrapper =
-      siteMetadata.search.provider === 'algolia' ? AlgoliaButton : KBarButton
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
-    return (
-      <SearchButtonWrapper aria-label="Search">
+  const toggleSearch = useCallback(() => {
+    setIsSearchOpen((prev) => !prev)
+  }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        toggleSearch()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [toggleSearch])
+
+  return (
+    <>
+      <button aria-label="Search" onClick={toggleSearch}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -26,9 +38,10 @@ const SearchButton = () => {
             d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
           />
         </svg>
-      </SearchButtonWrapper>
-    )
-  }
+      </button>
+      <AiSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+    </>
+  )
 }
 
 export default SearchButton
