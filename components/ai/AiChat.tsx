@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, FormEvent } from 'react'
 import { useChat } from '@ai-sdk/react'
 
 interface AiChatProps {
@@ -10,12 +10,16 @@ interface AiChatProps {
 
 export default function AiChat({ slug, articleContent }: AiChatProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
-    api: '/api/ai/chat',
-    body: { articleContent },
-  })
+  const { messages, sendMessage, status, setMessages, error, regenerate } =
+    useChat({
+      api: '/api/ai/chat',
+      body: { articleContent },
+    })
+
+  const isLoading = status === 'streaming' || status === 'submitted'
 
   // Reset messages when slug changes
   useEffect(() => {
@@ -28,6 +32,14 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    const text = input.trim()
+    if (!text || isLoading) return
+    setInput('')
+    sendMessage({ text })
+  }
 
   return (
     <>
@@ -79,27 +91,45 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
                 针对这篇文章提问吧
               </p>
             )}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`mb-3 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}
-              >
+            {messages.map((msg) => {
+              const text = msg.parts
+                ?.filter((p) => p.type === 'text')
+                .map((p) => p.text)
+                .join('') || ''
+              if (!text) return null
+              return (
                 <div
-                  className={`inline-block max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                    msg.role === 'user'
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                  }`}
+                  key={msg.id}
+                  className={`mb-3 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}
                 >
-                  {msg.content}
+                  <div
+                    className={`inline-block max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                      msg.role === 'user'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    {text}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
             {isLoading && (
               <div className="mb-3 text-left">
                 <div className="inline-block rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-gray-800">
                   <span className="animate-pulse">...</span>
                 </div>
+              </div>
+            )}
+            {error && (
+              <div className="mb-3 text-center">
+                <p className="mb-2 text-xs text-red-500">服务异常，请重试</p>
+                <button
+                  onClick={() => regenerate()}
+                  className="rounded-md bg-gray-100 px-3 py-1 text-xs text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  重试
+                </button>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -113,7 +143,7 @@ export default function AiChat({ slug, articleContent }: AiChatProps) {
             <div className="flex gap-2">
               <input
                 value={input}
-                onChange={handleInputChange}
+                onChange={(e) => setInput(e.target.value)}
                 placeholder="输入你的问题..."
                 className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 disabled={isLoading}

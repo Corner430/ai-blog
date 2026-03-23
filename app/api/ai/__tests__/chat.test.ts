@@ -5,16 +5,16 @@ import { POST } from '../chat/route'
 
 jest.mock('@/lib/hunyuan', () => ({
   isAiEnabled: jest.fn(),
-  getHunyuanProvider: jest.fn(() => jest.fn(() => 'mock-model')),
-  HUNYUAN_MODEL: 'hunyuan-turbos-latest',
+  getHunyuanModel: jest.fn(() => 'mock-model'),
 }))
 
 jest.mock('ai', () => ({
   streamText: jest.fn(),
+  convertToModelMessages: jest.fn(async (msgs) => msgs),
 }))
 
 import { isAiEnabled } from '@/lib/hunyuan'
-import { streamText } from 'ai'
+import { streamText, convertToModelMessages } from 'ai'
 
 const mockIsAiEnabled = isAiEnabled as jest.Mock
 const mockStreamText = streamText as jest.Mock
@@ -59,7 +59,7 @@ describe('POST /api/ai/chat', () => {
     mockIsAiEnabled.mockReturnValue(true)
     const mockResponse = new Response('mock stream')
     mockStreamText.mockReturnValue({
-      toDataStreamResponse: () => mockResponse,
+      toUIMessageStreamResponse: () => mockResponse,
     })
 
     const res = await POST(

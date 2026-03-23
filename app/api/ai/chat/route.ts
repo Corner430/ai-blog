@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { streamText } from 'ai'
-import { isAiEnabled, getHunyuanProvider, HUNYUAN_MODEL } from '@/lib/hunyuan'
+import { streamText, convertToModelMessages } from 'ai'
+import { isAiEnabled, getHunyuanModel } from '@/lib/hunyuan'
 
 export async function POST(request: Request) {
   if (!isAiEnabled()) {
@@ -18,14 +18,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'articleContent is required' }, { status: 400 })
   }
 
+  const modelMessages = await convertToModelMessages(messages)
+
   const result = streamText({
-    model: getHunyuanProvider()(HUNYUAN_MODEL),
+    model: getHunyuanModel(),
     system: `你是一个博客文章阅读助手。基于以下文章内容回答用户的问题。如果问题与文章内容无关，请礼貌地告知用户你只能回答与文章相关的问题。
 
 文章内容：
 ${articleContent}`,
-    messages,
+    messages: modelMessages,
   })
 
-  return result.toDataStreamResponse()
+  return result.toUIMessageStreamResponse()
 }

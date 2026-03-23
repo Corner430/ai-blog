@@ -10,11 +10,11 @@ import AiChat from '../AiChat'
 jest.mock('@ai-sdk/react', () => ({
   useChat: jest.fn(() => ({
     messages: [],
-    input: '',
-    handleInputChange: jest.fn(),
-    handleSubmit: jest.fn(),
-    isLoading: false,
+    sendMessage: jest.fn(),
+    status: 'ready',
     setMessages: jest.fn(),
+    error: undefined,
+    regenerate: jest.fn(),
   })),
 }))
 
