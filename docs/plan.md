@@ -54,8 +54,8 @@
 ### API接入信息
 - OpenAI兼容接口：`https://api.hunyuan.cloud.tencent.com/v1`
 - 认证方式：Bearer Token (`Authorization: Bearer $HUNYUAN_API_KEY`)
-- 生图接口域名：`hunyuan.tencentcloudapi.com`
-- 生图认证：腾讯云API 3.0签名（SecretId + SecretKey, TC3-HMAC-SHA256）
+- 生图接口域名：`api.cloudai.tencent.com`
+- 生图认证：Bearer Token (HUNYUAN_API_KEY)
 - 生图地域：`ap-guangzhou`
 - 生图API版本：`2023-09-01`
 
@@ -139,12 +139,10 @@
 ### 第2步：配置腾讯云混元
 - 创建 `.env.local`：
   ```
-  HUNYUAN_API_KEY=xxx           # 混元OpenAI兼容接口的API Key
-  TENCENT_SECRET_ID=xxx         # 腾讯云SecretId（生图用）
-  TENCENT_SECRET_KEY=xxx        # 腾讯云SecretKey（生图用）
+  HUNYUAN_API_KEY=xxx           # 混元OpenAI兼容接口及生图的API Key
   ```
 - 创建 `lib/hunyuan.ts`：封装OpenAI兼容SDK调用
-- 创建 `lib/hunyuan-image.ts`：封装云API 3.0生图调用
+- 创建 `lib/hunyuan-image.ts`：封装OpenAI兼容生图API调用
 - 修改 `next.config.js`：CSP白名单添加 `api.hunyuan.cloud.tencent.com`
 
 ### 第3步：开发AI文章摘要
@@ -206,7 +204,7 @@ components/
 │   └── AiSearch.tsx        # AI语义搜索框
 lib/
 ├── hunyuan.ts              # 混元文本API封装（OpenAI兼容）
-├── hunyuan-image.ts        # 混元生图API封装（云API 3.0）
+├── hunyuan-image.ts        # 混元生图API封装（OpenAI兼容）
 └── embeddings.ts           # Embedding索引工具
 ```
 
@@ -220,12 +218,12 @@ lib/
 | `data/authors/default.md` | 作者信息 |
 | `data/headerNavLinks.ts` | 导航链接 |
 | `data/logo.svg` | 站点Logo |
-| `.env.local` | 腾讯云API Key（HUNYUAN_API_KEY, SECRET_ID, SECRET_KEY） |
+| `.env.local` | 腾讯云API Key（HUNYUAN_API_KEY） |
 | `next.config.js` | CSP白名单添加混元API域名 |
 | `layouts/PostLayout.tsx` | 集成AI摘要组件和AI问答浮窗 |
 | `layouts/PostBanner.tsx` | 集成AI摘要组件和AI问答浮窗 |
 | `layouts/PostSimple.tsx` | 集成AI摘要组件和AI问答浮窗 |
-| `package.json` | 新增依赖（openai SDK, tencentcloud SDK等） |
+| `package.json` | 新增依赖（openai SDK等） |
 
 ---
 
@@ -234,7 +232,6 @@ lib/
 ```json
 {
   "openai": "^4.x",
-  "tencentcloud-sdk-nodejs-hunyuan": "^4.x",
   "ai": "^3.x"
 }
 ```
