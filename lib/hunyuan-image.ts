@@ -30,7 +30,7 @@ export async function submitImageJob(params: SubmitImageJobParams): Promise<{ jo
     body: JSON.stringify({
       model: IMAGE_MODEL,
       prompt,
-      size: '1024:576',
+      size: '1280:720',
     }),
   })
 
