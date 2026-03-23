@@ -2,27 +2,42 @@ import { Page } from '@playwright/test'
 
 /**
  * Mock AI Chat streaming response (AI SDK UI Message Stream Protocol).
- * The useChat hook expects responses in the AI SDK data stream format.
- * For `toUIMessageStreamResponse()`, the format uses specific prefixed lines.
+ * The useChat hook with `toUIMessageStreamResponse()` uses SSE format with JSON chunks.
  */
 export async function mockChatStream(page: Page, responseText: string) {
-  await page.route('**/api/ai/chat', async (route) => {
-    // AI SDK UI Message Stream format:
-    // First: message start with id and role
-    // Then: text parts
-    // Finally: message end with finish reason
+  await page.route('**/api/chat', async (route) => {
     const messageId = 'mock-msg-id'
-    const body = [
-      `f:{"messageId":"${messageId}"}`,
-      `0:${JSON.stringify(responseText)}`,
-      `e:{"finishReason":"stop","usage":{"promptTokens":10,"completionTokens":20},"isContinued":false}`,
-      `d:{"finishReason":"stop","usage":{"promptTokens":10,"completionTokens":20}}`,
-    ].join('\n')
+    const textPartId = 'mock-text-part'
+    // Build SSE body line by line with \n\n separators
+    const lines = [
+      `data: {"type":"start","messageId":"${messageId}"}`,
+      '',
+      `data: {"type":"start-step"}`,
+      '',
+      `data: {"type":"text-start","id":"${textPartId}"}`,
+      '',
+      `data: {"type":"text-delta","id":"${textPartId}","delta":${JSON.stringify(responseText)}}`,
+      '',
+      `data: {"type":"text-end","id":"${textPartId}"}`,
+      '',
+      `data: {"type":"finish-step"}`,
+      '',
+      `data: {"type":"finish","finishReason":"stop"}`,
+      '',
+      `data: [DONE]`,
+      '',
+      '',
+    ]
 
     await route.fulfill({
       status: 200,
-      contentType: 'text/plain; charset=utf-8',
-      body,
+      headers: {
+        'content-type': 'text/event-stream; charset=utf-8',
+        'cache-control': 'no-cache',
+        'connection': 'keep-alive',
+        'x-vercel-ai-ui-message-stream': 'v1',
+      },
+      body: lines.join('\n'),
     })
   })
 }

@@ -1,0 +1,32 @@
+import { test, expect } from '@playwright/test'
+
+test.describe('Desktop Navigation', () => {
+  const navLinks = [
+    { name: 'Blog', href: '/blog' },
+    { name: 'Tags', href: '/tags' },
+    { name: 'Projects', href: '/projects' },
+    { name: 'About', href: '/about' },
+  ]
+
+  for (const { name, href } of navLinks) {
+    test(`should navigate to ${href} when clicking ${name}`, async ({ page }) => {
+      await page.goto('/')
+      // Desktop nav links are inside the hidden sm:flex container
+      const navContainer = page.locator('.no-scrollbar.hidden.sm\\:flex')
+      const link = navContainer.getByRole('link', { name })
+      await expect(link).toBeVisible()
+      await link.click()
+      await expect(page).toHaveURL(new RegExp(href))
+    })
+  }
+
+  test('should hide desktop nav links on small screens', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    // Desktop nav container should be hidden
+    const navContainer = page.locator('.no-scrollbar.hidden.sm\\:flex')
+    await expect(navContainer).not.toBeVisible()
+    // Hamburger menu button should be visible
+    await expect(page.getByRole('button', { name: 'Toggle Menu' })).toBeVisible()
+  })
+})
