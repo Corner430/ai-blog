@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
-import { isAiEnabled, getHunyuanProvider, HUNYUAN_MODEL } from '@/lib/hunyuan'
+import { isAiEnabled, getHunyuanModel } from '@/lib/hunyuan'
 
 export async function POST(request: Request) {
   if (!isAiEnabled()) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await generateText({
-      model: getHunyuanProvider()(HUNYUAN_MODEL),
+      model: getHunyuanModel(),
       system:
         '你是一个标签生成助手。根据提供的文章内容，生成3-5个相关的标签。只返回一个JSON数组格式，例如：["标签1", "标签2", "标签3"]。不要返回其他内容。',
       prompt: content,

@@ -6,8 +6,7 @@ import { POST } from '../summary/route'
 // Mock the hunyuan module
 jest.mock('@/lib/hunyuan', () => ({
   isAiEnabled: jest.fn(),
-  getHunyuanProvider: jest.fn(() => jest.fn(() => 'mock-model')),
-  HUNYUAN_MODEL: 'hunyuan-turbos-latest',
+  getHunyuanModel: jest.fn(() => 'mock-model'),
 }))
 
 // Mock the ai module
@@ -54,7 +53,7 @@ describe('POST /api/ai/summary', () => {
     mockIsAiEnabled.mockReturnValue(true)
     const mockResponse = new Response('mock stream')
     mockStreamText.mockReturnValue({
-      toDataStreamResponse: () => mockResponse,
+      toTextStreamResponse: () => mockResponse,
     })
 
     const res = await POST(createRequest({ content: 'Hello world article content', slug: 'test-article' }))

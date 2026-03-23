@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { streamText } from 'ai'
-import { isAiEnabled, getHunyuanProvider, HUNYUAN_MODEL } from '@/lib/hunyuan'
+import { isAiEnabled, getHunyuanModel } from '@/lib/hunyuan'
 
 const PROMPTS: Record<string, string> = {
   polish:
@@ -26,10 +26,10 @@ export async function POST(request: Request) {
   }
 
   const result = streamText({
-    model: getHunyuanProvider()(HUNYUAN_MODEL),
+    model: getHunyuanModel(),
     system: PROMPTS[action],
     prompt: content,
   })
 
-  return result.toDataStreamResponse()
+  return result.toTextStreamResponse()
 }

@@ -5,8 +5,7 @@ import { POST } from '../tags/route'
 
 jest.mock('@/lib/hunyuan', () => ({
   isAiEnabled: jest.fn(),
-  getHunyuanProvider: jest.fn(() => jest.fn(() => 'mock-model')),
-  HUNYUAN_MODEL: 'hunyuan-turbos-latest',
+  getHunyuanModel: jest.fn(() => 'mock-model'),
 }))
 
 jest.mock('ai', () => ({

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { streamText } from 'ai'
-import { isAiEnabled, getHunyuanProvider, HUNYUAN_MODEL } from '@/lib/hunyuan'
+import { isAiEnabled, getHunyuanModel } from '@/lib/hunyuan'
 
 export async function POST(request: Request) {
   if (!isAiEnabled()) {
@@ -8,18 +8,19 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { content, slug } = body
+  const { prompt, content, slug } = body
+  const articleContent = prompt || content
 
-  if (!content) {
+  if (!articleContent) {
     return NextResponse.json({ error: 'content is required' }, { status: 400 })
   }
 
   const result = streamText({
-    model: getHunyuanProvider()(HUNYUAN_MODEL),
+    model: getHunyuanModel(),
     system:
       '你是一个博客文章摘要助手。请根据提供的文章内容，生成2-3句简洁的中文摘要，概括文章的核心观点和要点。摘要应当精炼、准确，不超过150字。',
-    prompt: content,
+    prompt: articleContent,
   })
 
-  return result.toDataStreamResponse()
+  return result.toTextStreamResponse()
 }

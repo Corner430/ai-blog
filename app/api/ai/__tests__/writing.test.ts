@@ -5,8 +5,7 @@ import { POST } from '../writing/route'
 
 jest.mock('@/lib/hunyuan', () => ({
   isAiEnabled: jest.fn(),
-  getHunyuanProvider: jest.fn(() => jest.fn(() => 'mock-model')),
-  HUNYUAN_MODEL: 'hunyuan-turbos-latest',
+  getHunyuanModel: jest.fn(() => 'mock-model'),
 }))
 
 jest.mock('ai', () => ({
@@ -54,7 +53,7 @@ describe('POST /api/ai/writing', () => {
     mockIsAiEnabled.mockReturnValue(true)
     const mockResponse = new Response('mock stream')
     mockStreamText.mockReturnValue({
-      toDataStreamResponse: () => mockResponse,
+      toTextStreamResponse: () => mockResponse,
     })
 
     const res = await POST(createRequest({ content: 'test content', action: 'polish' }))
@@ -66,7 +65,7 @@ describe('POST /api/ai/writing', () => {
     mockIsAiEnabled.mockReturnValue(true)
     const mockResponse = new Response('mock stream')
     mockStreamText.mockReturnValue({
-      toDataStreamResponse: () => mockResponse,
+      toTextStreamResponse: () => mockResponse,
     })
 
     const res = await POST(createRequest({ content: 'test content', action: 'continue' }))
