@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { mockTextStream, mockErrorResponse } from './helpers/mock-api'
 
 test.describe('AI Summary', () => {
   test.beforeEach(async ({ page }) => {
@@ -9,13 +10,7 @@ test.describe('AI Summary', () => {
   })
 
   test('should display AI summary section with label', async ({ page }) => {
-    await page.route('**/api/ai/summary', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/plain; charset=utf-8',
-        body: 'This is a test summary of the article.',
-      })
-    })
+    await mockTextStream(page, '**/api/ai/summary', 'This is a test summary of the article.')
     await page.goto('/blog/hello-world')
     const summary = page.getByTestId('ai-summary')
     await expect(summary).toBeVisible()
@@ -27,8 +22,8 @@ test.describe('AI Summary', () => {
   })
 
   test('should show loading skeleton while fetching', async ({ page }) => {
+    // Delay needed to observe loading state — inline mock required
     await page.route('**/api/ai/summary', async (route) => {
-      // Delay the response to see loading state
       await new Promise((r) => setTimeout(r, 3000))
       await route.fulfill({
         status: 200,
@@ -43,13 +38,7 @@ test.describe('AI Summary', () => {
   })
 
   test('should show error message on API failure', async ({ page }) => {
-    await page.route('**/api/ai/summary', async (route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Internal error' }),
-      })
-    })
+    await mockErrorResponse(page, '**/api/ai/summary', 500, 'Internal error')
     await page.goto('/blog/hello-world')
     const summary = page.getByTestId('ai-summary')
     await expect(summary.getByText('AI 摘要生成失败，请稍后刷新重试')).toBeVisible({

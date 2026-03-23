@@ -22,12 +22,11 @@ test.describe('Blog List Page', () => {
   test('should navigate to tags page when clicking a tag', async ({ page }) => {
     await page.goto('/blog', { waitUntil: 'networkidle' })
     const tagLink = page.locator('a[href*="/tags/"]').first()
-    if (await tagLink.isVisible()) {
-      await Promise.all([
-        page.waitForURL(/\/tags\//, { timeout: 15000 }),
-        tagLink.click(),
-      ])
-    }
+    await expect(tagLink).toBeVisible()
+    await Promise.all([
+      page.waitForURL(/\/tags\//, { timeout: 15000 }),
+      tagLink.click(),
+    ])
   })
 
   test('should show tag sidebar on desktop', async ({ page }) => {

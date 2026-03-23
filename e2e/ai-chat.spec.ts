@@ -55,38 +55,7 @@ test.describe('AI Chat', () => {
   })
 
   test('should disable send button while loading', async ({ page }) => {
-    // Mock a delayed response using proper SSE format
-    await page.route('**/api/chat', async (route) => {
-      await new Promise((r) => setTimeout(r, 3000))
-      const lines = [
-        'data: {"type":"start","messageId":"mock-id"}',
-        '',
-        'data: {"type":"start-step"}',
-        '',
-        'data: {"type":"text-start","id":"tp"}',
-        '',
-        'data: {"type":"text-delta","id":"tp","delta":"Response"}',
-        '',
-        'data: {"type":"text-end","id":"tp"}',
-        '',
-        'data: {"type":"finish-step"}',
-        '',
-        'data: {"type":"finish","finishReason":"stop"}',
-        '',
-        'data: [DONE]',
-        '',
-        '',
-      ]
-      await route.fulfill({
-        status: 200,
-        headers: {
-          'content-type': 'text/event-stream; charset=utf-8',
-          'cache-control': 'no-cache',
-          'x-vercel-ai-ui-message-stream': 'v1',
-        },
-        body: lines.join('\n'),
-      })
-    })
+    await mockChatStream(page, 'Response', 3000)
     await page.goto('/blog/hello-world')
     await page.getByTestId('ai-chat-toggle').click()
     const panel = page.getByTestId('ai-chat-panel')

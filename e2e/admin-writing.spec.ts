@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { mockTextStream, mockErrorResponse } from './helpers/mock-api'
 
 test.describe('Writing Assistant', () => {
   test('should disable buttons when input is empty', async ({ page }) => {
@@ -9,13 +10,7 @@ test.describe('Writing Assistant', () => {
   })
 
   test('should polish text and show result', async ({ page }) => {
-    await page.route('**/api/ai/writing', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/plain; charset=utf-8',
-        body: '这是润色后的文本',
-      })
-    })
+    await mockTextStream(page, '**/api/ai/writing', '这是润色后的文本')
     await page.goto('/admin/writing')
     await page.locator('textarea').fill('这是一段需要润色的文本')
     await page.getByRole('button', { name: '润色' }).click()
@@ -27,13 +22,7 @@ test.describe('Writing Assistant', () => {
   })
 
   test('should continue writing and show result', async ({ page }) => {
-    await page.route('**/api/ai/writing', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/plain; charset=utf-8',
-        body: '续写的内容在这里',
-      })
-    })
+    await mockTextStream(page, '**/api/ai/writing', '续写的内容在这里')
     await page.goto('/admin/writing')
     await page.locator('textarea').fill('开始的文本')
     await page.getByRole('button', { name: '续写' }).click()
@@ -41,13 +30,7 @@ test.describe('Writing Assistant', () => {
   })
 
   test('should copy result and show "已复制"', async ({ page }) => {
-    await page.route('**/api/ai/writing', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/plain; charset=utf-8',
-        body: '润色后的结果',
-      })
-    })
+    await mockTextStream(page, '**/api/ai/writing', '润色后的结果')
     await page.context().grantPermissions(['clipboard-write', 'clipboard-read'])
     await page.goto('/admin/writing')
     await page.locator('textarea').fill('文本')
@@ -58,13 +41,7 @@ test.describe('Writing Assistant', () => {
   })
 
   test('should replace original text with AI result', async ({ page }) => {
-    await page.route('**/api/ai/writing', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/plain; charset=utf-8',
-        body: '替换后的文本',
-      })
-    })
+    await mockTextStream(page, '**/api/ai/writing', '替换后的文本')
     await page.goto('/admin/writing')
     await page.locator('textarea').fill('原始文本')
     await page.getByRole('button', { name: '润色' }).click()
@@ -77,13 +54,7 @@ test.describe('Writing Assistant', () => {
   })
 
   test('should show error on API failure', async ({ page }) => {
-    await page.route('**/api/ai/writing', async (route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'text/plain',
-        body: '写作服务异常',
-      })
-    })
+    await mockErrorResponse(page, '**/api/ai/writing', 500, '写作服务异常')
     await page.goto('/admin/writing')
     await page.locator('textarea').fill('文本')
     await page.getByRole('button', { name: '润色' }).click()
