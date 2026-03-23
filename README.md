@@ -15,9 +15,9 @@ Based on [tailwind-nextjs-starter-blog](https://github.com/timlrx/tailwind-nextj
 
 ## Tech Stack
 
-- Next.js 14 (App Router)
+- Next.js 15 (App Router)
 - TypeScript
-- Tailwind CSS 3.0
+- Tailwind CSS 4
 - MDX (Contentlayer)
 - Tencent Hunyuan AI (OpenAI-compatible API)
 - Vercel (deployment)
