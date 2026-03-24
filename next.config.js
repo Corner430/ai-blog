@@ -61,7 +61,7 @@ module.exports = () => {
   const plugins = [withContentlayer, withBundleAnalyzer]
   return plugins.reduce((acc, next) => next(acc), {
     env: {
-      NEXT_PUBLIC_AI_ENABLED: process.env.HUNYUAN_API_KEY ? 'true' : '',
+      NEXT_PUBLIC_AI_ENABLED: process.env.NEXT_PUBLIC_AI_ENABLED || (process.env.HUNYUAN_API_KEY ? 'true' : ''),
     },
     reactStrictMode: true,
     trailingSlash: true,
