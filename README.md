@@ -167,10 +167,6 @@ The build process includes:
 2. Post-build processing (`scripts/postbuild.mjs`)
 3. Embedding index generation (`scripts/generate-embeddings.mjs`) — skips gracefully if `HUNYUAN_API_KEY` is not set
 
-## Documentation
-
-See [docs/plan.md](docs/plan.md) for the full implementation plan.
-
 ## License
 
 [MIT](LICENSE)
