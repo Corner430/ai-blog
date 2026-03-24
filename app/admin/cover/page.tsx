@@ -22,6 +22,8 @@ export default function CoverPage() {
   const [imageUrl, setImageUrl] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [copied, setCopied] = useState(false)
+  const [applied, setApplied] = useState(false)
+  const [applying, setApplying] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cancelledRef = useRef(false)
 
@@ -92,6 +94,7 @@ export default function CoverPage() {
     setImageUrl('')
     setErrorMsg('')
     setCopied(false)
+    setApplied(false)
     cleanup()
     cancelledRef.current = false
 
@@ -140,6 +143,28 @@ export default function CoverPage() {
     await navigator.clipboard.writeText(imageUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleApply = async () => {
+    if (!selectedFilename || !imageUrl) return
+    setApplying(true)
+    try {
+      const res = await fetch('/api/admin/cover/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: selectedFilename, imageUrl }),
+      })
+      if (res.ok) {
+        setApplied(true)
+      } else {
+        const data = await res.json()
+        setErrorMsg(data.error || '应用失败')
+      }
+    } catch {
+      setErrorMsg('应用失败')
+    } finally {
+      setApplying(false)
+    }
   }
 
   const isLoading = status === 'submitting' || status === 'polling'
@@ -228,6 +253,15 @@ export default function CoverPage() {
             >
               {copied ? '已复制' : '复制 URL'}
             </button>
+            {selectedFilename && (
+              <button
+                onClick={handleApply}
+                disabled={applying || applied}
+                className="rounded-md bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {applied ? '已应用' : applying ? '应用中...' : '应用到文章'}
+              </button>
+            )}
           </div>
         </div>
       )}
