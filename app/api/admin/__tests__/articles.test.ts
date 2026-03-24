@@ -47,12 +47,14 @@ describe('GET /api/admin/articles', () => {
     expect(data.articles[0]).toEqual({
       filename: 'hello-world.mdx',
       title: 'Hello World',
+      summary: '',
       tags: ['blog'],
       content: 'Content 1',
     })
     expect(data.articles[1]).toEqual({
       filename: 'second-post.mdx',
       title: 'Second Post',
+      summary: '',
       tags: ['react', 'next'],
       content: 'Content 2',
     })
