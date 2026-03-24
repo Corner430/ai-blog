@@ -213,6 +213,7 @@ export default function CoverPage() {
 
       {status === 'done' && imageUrl && (
         <div className="mt-6 space-y-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="封面图预览" className="w-full rounded-lg shadow-md" />
           <div className="flex gap-3">
             <button

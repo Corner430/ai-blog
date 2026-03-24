@@ -55,7 +55,6 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               className="focus:border-primary-500 focus:ring-primary-500 mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:ring-1 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              autoFocus
             />
           </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}

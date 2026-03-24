@@ -20,8 +20,20 @@ Object.assign(navigator, {
 })
 
 const mockArticles = [
-  { filename: 'post-1.mdx', title: 'First Post', summary: 'Summary of first post', tags: [], content: '' },
-  { filename: 'post-2.mdx', title: 'Second Post', summary: '', tags: [], content: '' },
+  {
+    filename: 'post-1.mdx',
+    title: 'First Post',
+    summary: 'Summary of first post',
+    tags: [],
+    content: '',
+  },
+  {
+    filename: 'post-2.mdx',
+    title: 'Second Post',
+    summary: '',
+    tags: [],
+    content: '',
+  },
 ]
 
 // Helper: render with articles loaded
