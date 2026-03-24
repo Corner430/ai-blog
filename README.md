@@ -15,9 +15,35 @@ Based on [tailwind-nextjs-starter-blog](https://github.com/timlrx/tailwind-nextj
 
 All AI features gracefully degrade when `HUNYUAN_API_KEY` is not configured — APIs return `503`, and frontend components handle errors without breaking the page.
 
+## Writing Blog Posts
+
+Create a `.mdx` file in `data/blog/`:
+
+```mdx
+---
+title: 'My Post Title'
+date: '2026-03-24'
+tags: ['javascript', 'ai']
+draft: false
+summary: 'A brief description shown on the list page.'
+---
+
+Your article content here. Supports standard Markdown and embedded React components (MDX).
+```
+
+| Field | Description |
+|-------|-------------|
+| `title` | Article title |
+| `date` | Publish date (determines sort order) |
+| `tags` | Tag array (can also be AI-generated via `/admin/tags`) |
+| `draft` | Set `true` to hide from production |
+| `summary` | Short description for the article list page |
+
+After writing, `git push` to `main` and Vercel will auto-deploy.
+
 ## Admin Dashboard
 
-Access at `/admin` (not exposed in the public navigation bar).
+Access at `/admin` by navigating directly to the URL (e.g., `http://localhost:3000/admin` or `https://your-site.vercel.app/admin`). It is not exposed in the public navigation bar.
 
 - **Cover Image Generation** (`/admin/cover`) — Input title + summary, submit generation task, poll progress, preview result, download image or copy URL.
 - **Auto Tags** (`/admin/tags`) — Browse article list, generate AI tag suggestions, select/deselect tags, write selected tags to MDX frontmatter.
@@ -136,6 +162,12 @@ yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## Deployment
+
+The repository is connected to [Vercel](https://vercel.com/). Every push to `main` triggers an automatic production deployment.
+
+Set `HUNYUAN_API_KEY` in the Vercel project's environment variables to enable AI features in production.
 
 ## Testing
 
