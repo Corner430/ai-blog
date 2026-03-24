@@ -1,15 +1,24 @@
-const IMAGE_API_BASE = 'https://api.cloudai.tencent.com'
-const IMAGE_MODEL = 'HY-Image-V3.0'
+import { Client } from 'tencentcloud-sdk-nodejs-aiart/tencentcloud/services/aiart/v20221229/aiart_client'
+
+const REGION = 'ap-guangzhou'
 
 export function isImageAiEnabled(): boolean {
-  return !!process.env.HUNYUAN_API_KEY
+  return !!process.env.TENCENT_SECRET_ID && !!process.env.TENCENT_SECRET_KEY
 }
 
-function getHeaders() {
-  return {
-    Authorization: process.env.HUNYUAN_API_KEY!,
-    'Content-Type': 'application/json',
-  }
+function getClient(): Client {
+  return new Client({
+    credential: {
+      secretId: process.env.TENCENT_SECRET_ID!,
+      secretKey: process.env.TENCENT_SECRET_KEY!,
+    },
+    region: REGION,
+    profile: {
+      httpProfile: {
+        endpoint: 'aiart.tencentcloudapi.com',
+      },
+    },
+  })
 }
 
 export interface SubmitImageJobParams {
@@ -24,23 +33,18 @@ export async function submitImageJob(params: SubmitImageJobParams): Promise<{ jo
 
   const prompt = `为博客文章生成一张封面图。文章标题：${params.title}${params.summary ? `。文章摘要：${params.summary}` : ''}。要求：现代设计风格，适合技术博客，色彩鲜明，简洁大气。`
 
-  const resp = await fetch(`${IMAGE_API_BASE}/v1/aiart/submit`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
-      model: IMAGE_MODEL,
-      prompt,
-      size: '1280:720',
-    }),
+  const client = getClient()
+  const resp = await client.SubmitTextToImageJob({
+    Prompt: prompt,
+    Resolution: '1280:720',
+    LogoAdd: 0,
   })
 
-  if (!resp.ok) {
-    const text = await resp.text()
-    throw new Error(`Image submit failed (${resp.status}): ${text}`)
+  if (!resp.JobId) {
+    throw new Error('Image submit failed: no JobId returned')
   }
 
-  const data = await resp.json()
-  return { jobId: data.job_id }
+  return { jobId: resp.JobId }
 }
 
 export async function queryImageJob(
@@ -50,25 +54,16 @@ export async function queryImageJob(
     throw new Error('jobId is required')
   }
 
-  const resp = await fetch(`${IMAGE_API_BASE}/v1/aiart/query`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ job_id: jobId }),
-  })
+  const client = getClient()
+  const resp = await client.QueryTextToImageJob({ JobId: jobId })
 
-  if (!resp.ok) {
-    const text = await resp.text()
-    throw new Error(`Image query failed (${resp.status}): ${text}`)
-  }
+  const statusCode = resp.JobStatusCode
 
-  const data = await resp.json()
-  const status = data.status
-
-  if (status === '5') {
-    const imageUrl = data.data?.[0]?.url || ''
+  if (statusCode === '5') {
+    const imageUrl = resp.ResultImage?.[0] || ''
     return { status: 'done', imageUrl }
-  } else if (status === '4' || status === '6') {
-    return { status: 'failed', error: data.error_message || 'Unknown error' }
+  } else if (statusCode === '4') {
+    return { status: 'failed', error: resp.JobErrorMsg || 'Unknown error' }
   } else {
     return { status: 'processing' }
   }
