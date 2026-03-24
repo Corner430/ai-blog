@@ -10,7 +10,7 @@ jest.mock('fs', () => ({
 }))
 
 jest.mock('gray-matter', () => {
-  const fn = jest.fn()
+  const fn = jest.fn() as jest.Mock & { stringify: jest.Mock }
   fn.stringify = jest.fn()
   return fn
 })

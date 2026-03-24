@@ -11,11 +11,11 @@ const mockUseCompletion = jest.fn(() => ({
   completion: '',
   complete: mockComplete,
   isLoading: false,
-  error: undefined,
+  error: undefined as Error | undefined,
 }))
 
 jest.mock('@ai-sdk/react', () => ({
-  useCompletion: (...args: unknown[]) => mockUseCompletion(...args),
+  useCompletion: (...args: unknown[]) => mockUseCompletion(...(args as [])),
 }))
 
 import AiSummary from '../AiSummary'

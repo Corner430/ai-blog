@@ -17,6 +17,7 @@ export async function GET() {
       return {
         filename,
         title: (data.title as string) || '',
+        summary: (data.summary as string) || '',
         tags: (data.tags as string[]) || [],
         content,
       }

@@ -2,13 +2,21 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 
+interface Article {
+  filename: string
+  title: string
+  summary: string
+}
+
 type Status = 'idle' | 'submitting' | 'polling' | 'done' | 'failed' | 'timeout'
 
 const MAX_POLLS = 60
 const POLL_INTERVAL = 3000
 
 export default function CoverPage() {
-  const [title, setTitle] = useState('')
+  const [articles, setArticles] = useState<Article[]>([])
+  const [loadingArticles, setLoadingArticles] = useState(true)
+  const [selectedFilename, setSelectedFilename] = useState('')
   const [summary, setSummary] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [imageUrl, setImageUrl] = useState('')
@@ -16,6 +24,23 @@ export default function CoverPage() {
   const [copied, setCopied] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cancelledRef = useRef(false)
+
+  useEffect(() => {
+    fetch('/api/admin/articles')
+      .then((res) => res.json())
+      .then((data) => setArticles(data.articles || []))
+      .catch(() => setArticles([]))
+      .finally(() => setLoadingArticles(false))
+  }, [])
+
+  const selectedArticle = articles.find((a) => a.filename === selectedFilename)
+  const title = selectedArticle?.title || ''
+
+  const handleArticleChange = (filename: string) => {
+    setSelectedFilename(filename)
+    const article = articles.find((a) => a.filename === filename)
+    setSummary(article?.summary || '')
+  }
 
   const cleanup = useCallback(() => {
     cancelledRef.current = true
@@ -61,7 +86,7 @@ export default function CoverPage() {
   }, [])
 
   const handleGenerate = async () => {
-    if (!title.trim()) return
+    if (!title) return
 
     setStatus('submitting')
     setImageUrl('')
@@ -74,7 +99,7 @@ export default function CoverPage() {
       const submitRes = await fetch('/api/ai/cover/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), summary: summary.trim() || undefined }),
+        body: JSON.stringify({ title, summary: summary.trim() || undefined }),
       })
 
       if (!submitRes.ok) {
@@ -87,7 +112,6 @@ export default function CoverPage() {
       const { jobId } = await submitRes.json()
       setStatus('polling')
 
-      // Start first poll after interval
       timerRef.current = setTimeout(() => pollJob(jobId, 0), POLL_INTERVAL)
     } catch {
       setErrorMsg('提交失败')
@@ -129,20 +153,29 @@ export default function CoverPage() {
       <div className="mt-8 space-y-4">
         <div>
           <label
-            htmlFor="cover-title"
+            htmlFor="cover-article"
             className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
-            文章标题 *
+            选择文章 *
           </label>
-          <input
-            id="cover-title"
-            type="text"
-            placeholder="请输入文章标题"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={isLoading}
-            className="focus:border-primary-500 focus:ring-primary-500 mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:ring-1 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          />
+          {loadingArticles ? (
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">加载文章列表...</p>
+          ) : (
+            <select
+              id="cover-article"
+              value={selectedFilename}
+              onChange={(e) => handleArticleChange(e.target.value)}
+              disabled={isLoading}
+              className="focus:border-primary-500 focus:ring-primary-500 mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:ring-1 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            >
+              <option value="">-- 请选择文章 --</option>
+              {articles.map((article) => (
+                <option key={article.filename} value={article.filename}>
+                  {article.title || article.filename}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div>
@@ -150,11 +183,11 @@ export default function CoverPage() {
             htmlFor="cover-summary"
             className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
-            文章摘要（选填）
+            文章摘要（可编辑）
           </label>
           <textarea
             id="cover-summary"
-            placeholder="请输入文章摘要"
+            placeholder="选择文章后自动填充，也可手动修改"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             disabled={isLoading}
@@ -165,7 +198,7 @@ export default function CoverPage() {
 
         <button
           onClick={handleGenerate}
-          disabled={!title.trim() || isLoading}
+          disabled={!title || isLoading}
           className="bg-primary-500 hover:bg-primary-600 rounded-md px-4 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? '生成中...' : '生成封面'}
