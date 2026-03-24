@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
 
-function generateToken(password: string): string {
-  return createHmac('sha256', password).update('admin-session').digest('hex')
+async function generateToken(password: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode('admin-session'))
+  return Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow login page and login API through
-  if (pathname === '/admin/login' || pathname === '/api/admin/login') {
+  if (pathname.startsWith('/admin/login') || pathname.startsWith('/api/admin/login')) {
     return NextResponse.next()
   }
 
@@ -19,10 +29,9 @@ export function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get('admin-token')?.value
-  const expectedToken = generateToken(adminPassword)
+  const expectedToken = await generateToken(adminPassword)
 
   if (!token || token !== expectedToken) {
-    // API routes return 401 JSON; page routes redirect to login
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: '未授权' }, { status: 401 })
     }
