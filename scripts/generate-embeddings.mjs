@@ -52,6 +52,7 @@ async function main() {
         const resp = await client.embeddings.create({
           model: 'hunyuan-embedding',
           input: text,
+          encoding_format: 'float',
         })
         embedding = resp.data[0].embedding
         break
