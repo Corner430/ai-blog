@@ -23,7 +23,7 @@ const SearchButton = () => {
 
   return (
     <>
-      <button aria-label="Search" onClick={toggleSearch}>
+      <button aria-label="搜索" onClick={toggleSearch}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
