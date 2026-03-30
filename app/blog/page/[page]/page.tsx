@@ -1,5 +1,6 @@
 import ListLayout from '@/layouts/ListLayoutWithTags'
-import { allCoreContent, sortPosts } from 'pliny/utils/contentlayer'
+import { allCoreContent } from 'pliny/utils/contentlayer'
+import { sortPostsWithSticky } from '@/lib/utils'
 import { allBlogs } from 'contentlayer/generated'
 import { notFound } from 'next/navigation'
 
@@ -14,7 +15,7 @@ export const generateStaticParams = async () => {
 
 export default async function Page(props: { params: Promise<{ page: string }> }) {
   const params = await props.params
-  const posts = allCoreContent(sortPosts(allBlogs))
+  const posts = allCoreContent(sortPostsWithSticky(allBlogs))
   const pageNumber = parseInt(params.page as string)
   const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE)
 
@@ -36,7 +37,7 @@ export default async function Page(props: { params: Promise<{ page: string }> })
       posts={posts}
       initialDisplayPosts={initialDisplayPosts}
       pagination={pagination}
-      title="All Posts"
+      title="全部文章"
     />
   )
 }

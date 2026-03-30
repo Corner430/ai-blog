@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 import siteMetadata from '@/data/siteMetadata'
 import { ThemeProviders } from './theme-providers'
 import { Metadata } from 'next'
+import ClientGlobalWidgets from '@/components/ClientGlobalWidgets'
 
 const space_grotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="mb-auto">{children}</main>
             <Footer />
           </SectionContainer>
+          <ClientGlobalWidgets />
         </ThemeProviders>
       </body>
     </html>
