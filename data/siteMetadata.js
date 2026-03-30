@@ -3,8 +3,8 @@ const siteMetadata = {
   title: 'Corner430 AI Blog',
   author: 'Corner430',
   headerTitle: 'Corner430',
-  description: 'A developer blog exploring programming, AI, and building things with code.',
-  language: 'en-us',
+  description: '一个探索编程、AI 和技术实践的开发者博客',
+  language: 'zh-CN',
   theme: 'system', // system, dark or light
   siteUrl: 'https://corner430-ai-blog.vercel.app',
   siteRepo: 'https://github.com/Corner430/ai-blog',
@@ -22,7 +22,7 @@ const siteMetadata = {
   // instagram: 'https://www.instagram.com',
   // medium: 'https://medium.com',
   // bluesky: 'https://bsky.app/',
-  locale: 'en-US',
+  locale: 'zh-CN',
   // set to true if you want a navbar fixed to the top
   stickyNav: false,
   analytics: {
@@ -81,7 +81,7 @@ const siteMetadata = {
       // example: https://giscus.app/themes/custom_example.css
       themeURL: '',
       // This corresponds to the `data-lang="en"` in giscus's configurations
-      lang: 'en',
+      lang: 'zh-CN',
     },
   },
   search: {
