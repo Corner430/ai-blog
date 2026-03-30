@@ -1,0 +1,86 @@
+---
+title: 'clash load balancing'
+date: '2023-04-04'
+tags: ['Clash', '科学上网']
+draft: false
+images: ['/static/images/blog/covers/cover-proxy.png']
+summary: '文章介绍计算机端实现代理负载均衡的配置方法，通过修改Parsers、转换订阅为.yaml文件并添加代理组。含散列（同二级域名哈希选优质节点避风控）、轮询（轮换IP访问）两种策略，定时300秒测速，节点超时不计，支持多平台导入生效。'
+---
+
+### 1\. The computer uses Paesers to achieve load balancing
+
+Replace the content in **setting->Profiles->Parsers** with the following:
+
+```shell
+parsers:
+  - reg: 'slbable$'
+    yaml:
+      append-proxy-groups:
+        - name: ⚖️ 负载均衡-散列
+          type: load-balance
+          url: 'http://www.google.com/generate_204'
+          interval: 300
+          strategy: consistent-hashing
+        - name: ⚖️ 负载均衡-轮询
+          type: load-balance
+          url: 'http://www.google.com/generate_204'
+          interval: 300
+          strategy: round-robin
+      commands:
+        - proxy-groups.⚖️ 负载均衡-散列.proxies=[]proxyNames
+        - proxy-groups.0.proxies.0+⚖️ 负载均衡-散列
+        - proxy-groups.⚖️ 负载均衡-轮询.proxies=[]proxyNames
+        - proxy-groups.0.proxies.0+⚖️ 负载均衡-轮询
+```
+
+- `reg: 'slbable$'`Triggered when the suffix of the url is `slbable`
+- **负载均衡-轮询**Representatives use different ip to access
+- **负载均衡-散列**Hash algorithm is used on behalf of the same second-level domain name, and high-quality nodes are selected for access. Avoid ip risk control problems.
+- `interval: 300`Represents a speed measurement and conversion every 300 seconds, and nodes that time out are not counted
+
+### 2\. On the computer side, the `.yaml` file is dragged in to take effect
+
+1.  Export url through v2ray.
+2.  Use [subconverter](https://github.com/tindy2013/subconverter) and [简易版转换工具](https://bulianglin.com/archives/51.html) to achieve subscription conversion.
+3.  Open the converted link in the browser.
+4.  Save as `.yaml` file
+5.  Fill in `file\\file path#slbable` in `setting->url` to trigger subscription refresh, the essence is to refer to local files.
+
+### 3\. Rewrite the .yaml file, common to all platforms.
+
+1.  Open the .yaml file with an editor, vscode is the best.
+2.  Find **proxy-groups->proxies (first)**, add two options
+
+    ```shell
+    #Added to the first proxy policy group
+          - ⚖️ 负载均衡-轮询
+          - ⚖️ 负载均衡-散列
+    ```
+
+3.  Find the last group and add the following content after it.
+
+    ```shell
+    #Add proxy policy group
+      - name: ⚖️ 负载均衡-散列
+        type: load-balance
+        url: http://www.google.com/generate_204
+        interval: 300
+        strategy: consistent-hashing
+        proxies:
+          - P1
+          - P2
+          - P3
+      - name: ⚖️ 负载均衡-轮询
+        type: load-balance
+        url: http://www.google.com/generate_204
+        interval: 300
+        strategy: round-robin
+        proxies:
+          - P1
+          - P2
+          - P3
+    ```
+
+    Among them, P1, P2, and P3 represent nodes.
+
+4.  Import the configuration file to the required device.

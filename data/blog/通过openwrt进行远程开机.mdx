@@ -1,0 +1,19 @@
+---
+title: '通过openwrt进行远程开机'
+date: '2023-05-18'
+tags: ['路由器', 'OpenWrt']
+draft: false
+images: ['/static/images/blog/covers/cover-network.png']
+summary: '1. 防火墙->端口转发，开启openwrt的外网访问。 2. 网络适配器->属性->配置 3. 开启如下服务，参照google 4. 设置主板允许WOL（wake on lan） 5. openwrt网络唤醒 etherwake -i eth1 <macaddr>'
+---
+
+1.  防火墙->端口转发，开启openwrt的外网访问。
+2.  网络适配器->属性->配置
+    ![20230518084317](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518084317.png)
+3.  开启如下服务，参照google
+    ![20230518084506](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518084506.png)
+4.  设置主板允许WOL（wake on lan）
+5.  openwrt网络唤醒
+    ![20230518084609](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518084609.png)
+
+`etherwake -i eth1 <mac_addr>`

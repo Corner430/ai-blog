@@ -1,0 +1,17 @@
+---
+title: '优秀的网络服务器设计思路'
+date: '2024-07-24'
+tags: ['Cpp']
+draft: false
+images: ['/static/images/blog/covers/cover-cpp.png']
+summary: 'libev作者提出“一线程一事件循环”模型，将多线程服务端编程转化为设计高效易用的event loop，各线程运行一个loop（需处理线程同步等）。event loop是非阻塞网络编程核心，常与IO多路复用结合——避免忙轮询耗CPU，且阻塞IO会阻塞线程致无法处理其他事件。'
+---
+
+_libev_ 作者的观点：_one loop per thread is usually a good model_，这样多线程服务端编程的问题就转换为如何设计一个高效且易于使用的 `event loop`，然后每个线程 **_run_** 一个 `event loop` 就行了(当然线程间的同步、互斥少不了，还有其它的耗时事件需要起另外的线程来做)。
+
+`event loop` 是 `non-blocking` 网络编程的核心，`non-blocking` 几乎总是和 `IO-multiplexing` 一起使用，原因有两点:
+
+- 没有人真的会用轮询 (`busy-pooling`) 来检查某个 `non-blocking IO` 操作是否完成，这样太浪费 CPU 资源了。
+- `IO-multiplex` 一般不能和 `blocking IO` 用在一起，因为 `blocking IO` 中 `read()/write()/accept()/connect()` 都有可能阻塞当前线程，这样线程就没办法处理其他 `socket` 上的 `IO` 事件了。
+
+所以，当提到 `non-blocking` 的时候，实际上指的是 `non-blocking` + `IO-multiplexing`，单用其中任何一个都没有办法很好的实现功能。

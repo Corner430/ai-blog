@@ -1,0 +1,37 @@
+---
+title: '对比学习（Contrastive Learning）'
+date: '2023-07-18'
+tags: ['科研']
+draft: false
+images: ['/static/images/blog/covers/cover-ml.png']
+summary: '文章解读了Max margin Contrastive loss、Triplet Loss、N-pair Loss等对比学习损失函数，重点分析其机制。Max margin中，同分布样本最小化距离，异分布依相似度差计损，极端相似时损失最大为ε防过影响；N-pair Loss将点积视作余弦相似度，正数时a/b与a-b等价。'
+---
+
+1.  对于Max margin Contrastive loss的公式解读
+
+- 由于指示函数的作用，当两个样本属于同一分布的时候，最小化二者之间的距离。
+- 当两个样本不属于同一分布的时候，公式的后半部分起作用。具体而言：
+  - 当两个样本的相似度差别很大的时候，符合我们的要求，不造成损失，所以后半部分取0
+  - 当两个样本的相似度不是那么大的时候，造成一定的损失。
+  - 极端情况下，当两个样本的完全相似的时候，造成的损失最大，为$\epsilon$。不能再大了，防止单对样本对于最终函数的影响过大
+
+2.  对于Triplet Loss的公式解读
+
+![](https://cdn.jsdelivr.net/gh/Corner430/Picture1/images/20230719005701.png)
+
+3.  对于N-pair Loss公式解读
+
+- 点积可看作余弦相似度
+- a/b 和 a-b 在a,b＞0的时候是等价的
+
+4.  思考
+
+![](https://cdn.jsdelivr.net/gh/Corner430/Picture1/images/20230719010807.png)
+
+---
+
+## Reference
+
+[The Beginner’s Guide to Contrastive Learning](https://www.v7labs.com/blog/contrastive-learning-guide#:~:text=Contrastive%20Learning%20is%20a%20technique,a%20data%20class%20from%20another)
+
+[Contrastive Representation Learning](https://lilianweng.github.io/posts/2021-05-31-contrastive/)

@@ -1,0 +1,21 @@
+---
+title: 'Building a picture bed through github and PicGo'
+date: '2023-04-05'
+tags: ['PicGo', '图床', 'Linux', 'Ubuntu']
+draft: false
+images: ['/static/images/blog/covers/cover-devtools.png']
+summary: '文章介绍配置PicGo插件的步骤：在GitHub创建仓库并生成个人访问令牌，下载VSCode的PicGo插件，配置含CDN加速链接的参数。同时提及WSL使用异常问题，及Ubuntu报错“xclip not found”时安装xclip，改用系统剪贴板解决。'
+---
+
+1.  Create a new repository on github, select **setting->Developer settings->Personal access tokens (classic)** to create a tokens.
+2.  Download the **PicGo** plugin for vscode, find **Picgo>Pic Bed:Current** in **setting**, fill in the following content:
+
+![](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/PicGo_setting.png)
+
+**[https://cdn.jsdelivr.net/gh/](https://cdn.jsdelivr.net/gh/)** for CDN acceleration.
+
+3.  Remaining problems: wsl cannot be used normally.
+
+---
+
+Ubuntu 中报错 `xclip not found,Please install xclip before run picgo`，安装 `xclip`，之后使用**Ubuntu系统自带的剪贴板**就可以了。

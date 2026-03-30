@@ -1,0 +1,22 @@
+---
+title: 'Windows font'
+date: '2023-04-03'
+tags: ['Windows']
+draft: false
+images: ['/static/images/blog/covers/cover-windows.png']
+summary: '本文介绍通过修改注册表更换Windows系统字体的方法：以管理员身份运行regedit，定位至指定路径，复制满意字体数据后替换“Microsoft YaHei...”项的msyh.ttc值（仅改数据），重启生效。推荐字体为arial.ttf。'
+---
+
+Original font: **msyh.ttc**
+
+---
+
+`regedit`
+Run the command prompt `regedit` as an administrator, open the registry, and navigate to `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsNT\CurrentVersion\Fonts`
+Find the font you are satisfied with and right click - modify - copy value data
+Find `Microsoft YaHei & Microsoft YaHei UI (TrueType)` and change the following `msyh.ttc` to the font you want. Note: only change the value data, the value name should not be changed
+
+After the modification, exit the registry and restart!
+Check if the font has changed?
+
+> Recommended font: **arial.ttf**

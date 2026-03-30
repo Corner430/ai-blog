@@ -1,0 +1,19 @@
+---
+title: 'hexo g 报错 expected variable end'
+date: '2023-11-27'
+tags: ['Hexo']
+draft: false
+images: ['/static/images/blog/covers/cover-blog.png']
+summary: 'Hexo使用Nunjucks渲染帖子（旧版用Swig，语法类似），含{{ }}或{% %}的内容会被解析易引发问题。可通过raw标签插件、单反引号或三反引号跳过解析，避免异常。'
+---
+
+- [Troubleshooting](https://hexo.io/docs/troubleshooting.html)
+
+Hexo uses **Nunjucks** to render posts (**Swig** was used in the older version, which shares a similar syntax). Content wrapped with `{{ }}` or `{% %}` will get parsed and may cause problems. You can skip the parsing by wrapping it with the raw tag plugin, a single backtick `{{ }}` or a triple backtick.
+for example:
+
+```plaintext
+{% raw %}
+Hello {{ world }}
+{% endraw %}
+```

@@ -1,0 +1,14 @@
+---
+title: 'Delete the host key record for the specified IP address'
+date: '2023-04-03'
+tags: ['SSH']
+draft: false
+images: ['/static/images/blog/covers/cover-ssh.png']
+summary: '本文介绍用ssh-keygen命令删除SSH客户端known_hosts文件中指定IP主机密钥记录的方法，通过-R选项指定目标。普通IP如172.17.0.158用“ssh-keygen -f ~/.ssh/known_hosts -R 172.17.0.158”，带端口时需加方括号，如“-R [172.17.0.158]:8002”。'
+---
+
+- Deletes the host key record for the specified IP address from the SSH client’s “known_hosts” file.
+  `ssh-keygen -f "~/.ssh/known_hosts" -R "172.17.0.158"`
+
+If you need to specify the IP address of the SSH connection as port 8002 of 172.17.0.158, you can use the following command:
+`ssh-keygen -f "~/.ssh/known_hosts" -R "[172.17.0.158]:8002"`

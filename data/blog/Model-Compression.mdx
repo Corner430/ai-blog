@@ -1,0 +1,144 @@
+---
+title: 'Model Compression'
+date: '2023-06-26'
+tags: ['科研']
+draft: false
+images: ['/static/images/blog/covers/cover-ml.png']
+sticky: 1
+summary: '本文介绍模型压缩技术，核心含网络剪枝、知识蒸馏与参数量化。剪枝针对网络过参数化冗余，通过反复剪枝微调恢复精度，神经元剪枝结构规则易加速（如AlexNet压缩35倍无精度损失）；量化用少比特、权重聚类及哈夫曼编码降存储；蒸馏聚焦分类问题。各法协同优化模型效率。'
+---
+
+- _Model Compression_
+  - _Network Pruning_
+  - _Knowledge Distillation_
+  - _Parameter Quantization_
+  - _Arichitecture Design_
+  - _Dynamic Network_
+
+### _1\. Network Pruning_
+
+> 只要它是 NN 就 OK
+
+_Network can be pruned_
+
+- _Networks are typecally over-parameterized(there is significant redundant **weight or neurons**)_
+
+_[Network Pruning](https://youtu.be/dPp8rCAnU_A?si=aiwzfHoFb99JyAxm&t=383)_
+
+- _Importance of a weight_
+- _Importance of a neuron: the number of times it wasn’t zero on a given data set…_
+- _After pruning, the accuracy will drop(hopefully not too much)_
+- _Fine-tuning on training data for recover_
+- _Don’t prune too much at once, or the network won’t recover_
+
+> **要反复进行剪枝和微调，直到满足要求为止**
+
+**_[Why Pruning?](https://youtu.be/7B8Cx7woQk4?si=M-LSBjyhBL4hISer&t=218)_**
+
+- _How about simply train a smaller network?_
+- _It is widely known that smaller networks is more difficult to learn successfully._
+  - _Larger network is easier to optimize?_
+
+> 这里有两篇观点完全相反的 \*paper: [The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks](https://arxiv.org/abs/1803.03635) and [Rethinking the Value of Network Pruning](https://arxiv.org/abs/1810.05270)\*，进行探讨小模型是否可以直接 _train_
+
+**_Network Pruning-Practical Issue_**
+
+- _Weight pruning_
+  - \*The network architecture becomes irregular. **Hard to implement, hard to speedup(GPU不好加速)**…\*.(为解决这个问题，一般而言不会直接把 weight 剪掉，而是将其设置为 0，这样可以保持网络结构的完整性)
+  - 详细可参考 [Learning Structured Sparsity in Deep Neural Networks](https://arxiv.org/pdf/1608.03665.pdf)，**扔掉 95% 的 weight 都没关系**
+
+- _Neuron pruning_
+  - _The network architecture is regular. Easy to implement, easy to speedup(GPU好加速)…_
+
+**_[Pruning and Model Compression](https://youtu.be/AgezOkBTV90?si=KQj295FsSMItGArK)_**
+
+- _A three-stage pipeline to reduce the storage requirement of neural nets_
+
+![20230914234233](https://cdn.jsdelivr.net/gh/Corner430/Picture1/images/20230914234233.png)
+
+- _Showed a 35x decrease in size of AlexNet from 240MB to 6.9MB with no loss in accuracy_
+- _[Deep Compression: Compressing Deep Neural Networks with Pruning, Trained Quantization and Huffman Coding](https://arxiv.org/abs/1510.00149)_
+
+---
+
+### _2\. Knowledge Distillation_
+
+> 目前限定在分类问题
+
+- [Knowledge Distillation](https://github.com/Corner430/Knowledge-Distillation)
+- [knowledge distillation papers](https://github.com/lhyfst/knowledge-distillation-papers)
+
+---
+
+### _3\. Parameter Quantization_
+
+- _1\. Using less bits to represent a value_
+- _2\. Weight clustering_
+  - _K-means clustering_
+
+![20230914221219](https://cdn.jsdelivr.net/gh/Corner430/Picture1/images/20230914221219.png)
+
+- _3\. Represent frequent clusters by less bits, represent rare clusters by more bits_
+  - _e.g. Huffman encoding_
+
+**_[Binary Weights](https://youtu.be/fMsNf0ufYnY?si=IkOm07D8yvhhdqnM&t=162)_**
+
+> _BinaryConnect_ 有时候效果反而更好，因为**这本质上属于一种正则**
+
+---
+
+### _4\. Arichitecture Design_
+
+_[Low rank approximation](https://youtu.be/L0TOXlNpCJ8?si=rcPWVvlPtEAE_qJf)_
+
+- 对于 _FC_, 可以将其分解为两个 _FC_，这样可以减少参数量。**本质上还是和矩阵分解有些关系**
+- 对于 CNN
+
+![20230914223043](https://cdn.jsdelivr.net/gh/Corner430/Picture1/images/20230914223043.png)
+
+**_[Depthwise Separable Convolution](https://youtu.be/L0TOXlNpCJ8?si=VU8iu_qrtYfC05AQ&t=371)_**
+[参数对比](https://youtu.be/f0rOMyZSZi4?si=2lTmL5jp53GoCgIL)，\**参数量可以降低 *kernel_size $\times$ kernel_size*，存在着参数复用*\*
+
+_Learn more …_
+
+- [SqueezeNet](https://arxiv.org/abs/1602.07360)
+- SqueezeDet: Fully Convolutional Network for fast object detection
+- [MobileNet](https://arxiv.org/abs/1704.04861)
+- [ShuffleNet](https://arxiv.org/abs/1707.01083)
+- [Xception](https://arxiv.org/abs/1610.02357)
+- SEP-Net: Transforming k × k convolution into binary patterns for reducing model size
+
+---
+
+### _5\. Dynamic Network_
+
+_Can network adjust the computation power it need?_
+
+_Possible solutions:_
+
+- _1\. Train multiple classifiers_
+- _2\. Classifier at the intermedia layer_
+
+参考 [Multi-Scale Dense Networks for Resource Efficient Image Classification](https://arxiv.org/abs/1703.09844)
+
+---
+
+- 使用训练并剪枝之后的网络权重，去初始化一个更小的网络
+- _weight pruning_ 置 0，保存非零权重，利用蒸馏的方法，将剪枝后的网络的知识蒸馏到更小的网络中
+- 家教 + 教授
+- 万能的 NiN
+
+**_Further Studies_**
+
+- _Can we find winning tickets early on in training?(You et al, 2020)_
+- _Do wining tickets generalize across datasets and optimizer?(Morcos et al, 2019)_
+- _Can this hypothesis hold in other domains like text processing/NLP?(Yu et al, 2019)_
+
+**_Reading_**
+
+- _Robert T. Lange, Lottery Ticket Hypothesis: A Survey, 2020_
+- _Cheng et al., A Survey of Model Compression and Acceleration for Deep Neural Networks, 2017_
+
+---
+
+**_Song Han, Lecture 10 - Knowledge Distillation | MIT 6.S965_**

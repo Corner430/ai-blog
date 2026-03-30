@@ -1,0 +1,20 @@
+---
+title: 'wsl supports systemd'
+date: '2023-04-03'
+tags: ['WSL']
+draft: false
+images: ['/static/images/blog/covers/cover-windows.png']
+summary: '文章说明WSL现已支持systemd，需在/etc/wsl.conf（以sudo权限编辑）中添加[boot]段及systemd=true配置，同时提醒注意端口冲突，并附微软官方说明链接。'
+---
+
+- Add these lines to the _/etc/wsl.conf_ (note you will need to run your editor with sudo privileges, e.g: sudo vim _/etc/wsl.conf_):
+
+  ```shell
+  [boot]
+  systemd=true
+  ```
+
+> Pay attention to port conflicts
+
+- Reference
+  [Systemd support is now available in WSL!](https://devblogs.microsoft.com/commandline/systemd-support-is-now-available-in-wsl/)

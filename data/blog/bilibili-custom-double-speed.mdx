@@ -1,0 +1,17 @@
+---
+title: 'bilibili custom double speed'
+date: '2022-04-24'
+tags: ['Bilibili']
+draft: false
+images: ['/static/images/blog/covers/cover-misc.png']
+summary: '本文介绍在B站播放页调整视频播放速度的方法：按F12打开控制台，复制并修改指定代码（调整playbackRate值）后回车执行即可。后续需修改时，可通过控制台上下键快速查找此前输入的命令。'
+---
+
+- On the playback page of station b, **press f12 to open the console**
+- Copy the following code in the console, change 1.75 to the playback speed you want
+  `document.querySelector('video').playbackRate = 1.75`
+- Just press Enter after copying and pasting, and press the up and down keys to search for the command you entered before when you want to modify it next time
+
+---
+
+Reference from [Cai Mavericks Blog](https://www.cnblogs.com/cirry/p/12989304.html)

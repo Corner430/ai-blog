@@ -1,0 +1,22 @@
+---
+title: 'SwitchyOmega'
+date: '2024-05-24'
+tags: ['科学上网']
+draft: false
+images: ['/static/images/blog/covers/cover-proxy.png']
+summary: '文章介绍配置代理的步骤：先新建名为“proxy”的Proxy Profile并测试网站重定向至指定端口；再新建“AutoProxy”的Switch Profile，配置引用gfwlist.txt链接，测试时可能需等待几分钟生效。'
+---
+
+1.  首先删除所有的情景模型，新建Proxy Profile，起名`proxy`，如图所示。
+
+![20240524140148](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240524140148.png)
+
+> 选中当前的`proxy`情景模式进行测试，查看是否可用，此时应该是所有的网站都会重定向到指定端口。
+
+2.  新建Switch Profile，起名`AutoProxy`，配置如图所示。
+
+![20240524140241](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240524140241.png)
+
+[https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt)
+
+> 进行测试，可能需要等待几分钟才好用。

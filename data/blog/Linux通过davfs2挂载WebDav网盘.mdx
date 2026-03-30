@@ -1,0 +1,23 @@
+---
+title: 'Linux通过davfs2挂载WebDav网盘'
+date: '2023-12-10'
+tags: ['Linux', 'WebDav']
+draft: false
+images: ['/static/images/blog/covers/cover-linux.png']
+summary: '本文介绍通过davfs2配置Alist WebDAV服务自动挂载的方法，含安装、创建挂载点等步骤。关键配置为：编辑davfs2.conf设use_lock=0修正文件操作错误，修改secrets添加账号密码，fstab添加自动挂载条目，创建符号链接映射文件夹，实现稳定便捷访问。'
+---
+
+```bash
+sudo apt install davfs2
+
+mkdir /mnt/alist/
+sudo mount.davfs http://locaohost:8080/dav/ /mnt/alist/
+# 输入账号密码并手动连接
+```
+
+---
+
+1.  编辑 `/etc/davfs2/davfs2.conf`，找到其中的 `use_lock` 取消注释，并修改值为 `0`。（用于修正复制剪切文件错误）
+2.  修改 `/etc/davfs2/secrets`，在末尾添加 `http://localhost:8080/dav/ admin password`
+3.  编辑 `/etc/fstab`，在最后一行添加以下内容 `http://localhost:8080/dav/ /mnt/alist/ davfs defaults 0 0`
+4.  映射文件夹 `ln -s /mnt/alist/ /home/alist/`

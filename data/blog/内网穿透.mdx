@@ -1,0 +1,348 @@
+---
+title: '内网穿透'
+date: '2023-04-03'
+tags: ['内网穿透']
+draft: false
+images: ['/static/images/blog/covers/cover-network.png']
+summary: '本文介绍两种内网穿透方案：frp与Zerotier。frp详述服务端frps.ini、客户端frpc.ini配置示例、执行结果及Windows/Linux开机自启动方法；Zerotier涵盖安装、Moon部署（Docker镜像）、路由器配置等步骤，附具体操作命令，助力实现内网访问。'
+---
+
+> [frp 官网](https://gofrp.org/zh-cn/docs/examples/xtcp/)已提供基于 xtcp 的点对点(P2P)内网穿透
+
+## 1 frp
+
+### 1.1 frps
+
+**`frps.ini` 示例**
+
+```bash
+[common]
+bind_port = 7000
+token = password
+dashboard_port = 7500(网页登录端口)
+dashboard_user = admin（网页登录帐号）
+dashboard_pwd = password（网页登录密码）
+vhost_http_port = 10080
+vhost_https_port = 10443
+```
+
+**执行查看结果**
+
+```shell
+frps -c frps.ini
+
+# 输出如下：
+
+2019/01/12 15:22:39 [I] [service.go:130] frps tcp listen on 0.0.0.0:7000
+2019/01/12 15:22:39 [I] [service.go:172] http service listen on 0.0.0.0:10080
+2019/01/12 15:22:39 [I] [service.go:193] https service listen on 0.0.0.0:10443
+2019/01/12 15:22:39 [I] [service.go:216] Dashboard listen on 0.0.0.0:7500
+2019/01/12 15:22:39 [I] [root.go:210] Start frps success
+```
+
+### 1.2 frpc
+
+**`frpc.ini` 示例**
+
+```shell
+[common]
+server_addr = 1.1.1.1
+server_port = 7000
+token= password
+
+[RDP]
+type = tcp
+local_ip = 127.0.0.1
+local_port = 3389
+remote_port = 7001
+
+[VNC]
+type = tcp
+local_ip = 127.0.0.1
+local_port = 5900
+remote_port = 7002
+
+[SMB]
+type = tcp
+local_ip = 127.0.0.1
+local_port = 445
+remote_port = 7003
+```
+
+**执行查看结果**
+
+```shell
+./frpc -c frpc.ini
+
+# 输出如下：
+2019/01/12 16:14:56 [I] [service.go:205] login to server success, get run id [2b65b4e58a5917ac], server udp port [0]
+2019/01/12 16:14:56 [I] [proxy_manager.go:136] [2b65b4e58a5917ac] proxy added: [rdp smb]
+2019/01/12 16:14:56 [I] [control.go:143] [smb] start proxy success
+2019/01/12 16:14:56 [I] [control.go:143] [rdp] start proxy success
+```
+
+### 1.3 开机自启动
+
+#### 1.3.1 windows
+
+```vbnet
+set ws=wscript.createobject("wscript.shell")
+ws.run "cmd /c C:\frp_0.51.3_windows_amd64\frpc.exe -c C:\frp_0.51.3_windows_amd64\frpc.ini",0
+```
+
+#### 1.3.2 Linux
+
+```shell
+vim /etc/systemd/system/frpc.service
+
+# 输入内容如下：
+[Unit]
+Description=Frp client
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/path/to/your/frpc -c /path/to/your/frpc.ini
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## 2\. Zerotier
+
+[zerotier官网](https://www.zerotier.com/)
+
+### 2.1 安装 ZeroTier
+
+```shell
+# 1 安装
+curl -s https://install.zerotier.com | sudo bash
+
+# 2 加入网络
+sudo zerotier-cli join <NETWORK_ID>
+
+# 3 去官网授权
+
+# 4 查看网络
+sudo zerotier-cli listnetworks
+
+# 5 设置开机自启
+sudo systemctl enable zerotier-one.service
+```
+
+### 2.2 部署 Moon
+
+使用 docker 的 [seedgou/zerotier-moon](https://hub.docker.com/r/seedgou/zerotier-moon) 镜像
+
+```yml
+services:
+  zerotier-moon:
+    image: seedgou/zerotier-moon
+    container_name: 'zerotier-moon'
+    restart: always
+    ports:
+      - '9993:9993/udp'
+    volumes:
+      - ./config:/var/lib/zerotier-one
+    entrypoint:
+      - /startup.sh
+      - '-4'
+      - 1.2.3.4 # 服务器的公网IP
+```
+
+```shell
+# 1 进入容器
+docker exec -it zerotier-moon /bin/sh
+# 2 加入网络
+zerotier-cli join <NETWORK_ID>
+# 3 去官网授权
+# 4 退出容器，到 ./config 目录下查看 moon.json 文件，将 id 字段复制出来
+# 5 各个客户端通过 zerotier-cli orbit <MOON_ID> <MOON_IP> 命令加入 moon
+```
+
+> win11 版本闪退!!!
+
+### 2.3 路由器配置
+
+> 现版本的 zerotier 会自动允许客户端 NAT，所以不用设置这个，也不需要设置防火墙。直接配置路由表，之后加入 moon，打上允许自动 NAT 的标签即可
+
+1.  创建新接口
+    ![20240518151642](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240518151642.png)
+
+2.  设定防火墙
+    ![20240518151800](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240518151800.png)
+
+3.  配置 zerotier 作用域的防火墙
+    ![20240518152015](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240518152015.png)
+
+4.  新增一条防火墙通信规则
+    ![20240518152210](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240518152210.png)
+
+> 此时内部网络的设备就可以访问到外部网络了, 但是外部网络的设备还是无法访问到内部网络的设备，**如果是 ipv6，这条规则不用写，回去把 zerotier 的 自动允许客户端 NAT 关闭**
+
+5.  在 zerotier 的 web 控制台，写一条路由表
+    ![20240518153919](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240518153919.png)
+
+### 2.4 部署 Planet
+
+- 放行 3000/tcp, 3443/tcp, 9994/tcp, 9994/udp
+
+```yml
+services:
+  myztplanet:
+    image: xubiaolin/zerotier-planet:latest
+    container_name: ztplanet
+    ports:
+      - 9994:9994
+      - 9994:9994/udp
+      - 3443:3443
+      - 3000:3000
+    environment:
+      - IP_ADDR4=[IPV4IP ADDRESS]
+      - IP_ADDR6=
+      - ZT_PORT=9994
+      - API_PORT=3443
+      - FILE_SERVER_PORT=3000
+    volumes:
+      - ./data/dist:/app/dist
+      - ./data/ztncui:/app/ztncui
+      - ./data/one:/var/lib/zerotier-one
+      - ./data/config:/app/config
+    restart: unless-stopped
+```
+
+- 访问 [http://ip:3443](http://ip:3443/) 进行配置，初始账号密码为 admin/password
+- 创建网络后通过 Easy setup 配置 ip 范围
+- 使用服务端 ./data/dist/planet 替换客户端的 planet 文件
+  - windows：C:\\ProgramData\\ZeroTier\\One\\planet
+  - linux：/var/lib/zerotier-one/planet
+  - mac：/Library/Application Support/ZeroTier/One/planet
+  - openwrt: /etc/config/zero/planet
+  - android: [ZerotierFix](https://github.com/kaaass/ZerotierFix)
+  - ios: 通过 android 开路由，不要下载官方的客户端，没有用！！！
+- 加入网络，授权即可
+- Routes 也可以写路由表内容
+
+### 2.5 ipv6
+
+> 如果开通了 ipv6，且自建的 planet 只支持 ipv4，不建议自建 planet，可以自建 moon
+
+### 2.6 常见问题
+
+1.  无法卸载 zerotier
+
+    ```shell
+    # Ubuntu
+    sudo apt remove zerotier-one
+    sudo dpkg -P zerotier-one
+    sudo rm -rf /var/lib/zerotier-one/
+
+    # macOS
+    brew uninstall zerotier-one
+    sudo rm -rf /Library/Application Support/ZeroTier
+    rm -rf ~/Library/Application\ Support/ZeroTier/
+    ```
+
+2.  踢出后无法重进
+
+    ```shell
+    sudo zerotier-cli leave <NETWORK_ID>
+    ```
+
+    之后彻底卸载，重新安装并加入网络
+
+3.  切换网络后无法连接
+
+> 搭建 planet 服务器
+
+4.  有设备更换后无法连接
+
+> 无解，创建新的 zerotier 网络，重新加入
+
+## 3\. 花生壳
+
+## 4\. tailscale
+
+1.  路由器运行 tailscale
+
+    ```shell
+    tailscale up --netfilter-mode=off  --advertise-routes=局域网网段 --accept-routes
+    ```
+
+2.  路由器设置防火墙
+
+3.  云服务器 derp 中转服务器搭建部分
+
+```shell
+apt update && apt upgrade
+
+apt install -y wget git openssl curl
+
+wget https://go.dev/dl/go1.20.5.linux-amd64.tar.gz  # 去下载最新版本 https://go.dev/dl/
+
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.20.5.linux-amd64.tar.gz
+
+export PATH=$PATH:/usr/local/go/bin
+go version
+
+echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile
+source /etc/profile
+
+go env -w GO111MODULE=on
+
+go env -w GOPROXY=https://goproxy.cn,direct # 设置代理为国内代理
+
+go install tailscale.com/cmd/derper@main
+
+# 去 ./cmd/derper@main 注释掉 域名验证
+
+go build -o /etc/derp/derper
+
+ls /etc/derp
+
+openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout /etc/derp/derp.myself.com.key -out /etc/derp/derp.myself.com.crt -subj "/CN=derp.myself.com" -addext "subjectAltName=DNS:derp.myself.com"
+
+cat > /etc/systemd/system/derp.service <<EOF
+[Unit]
+Description=TS Derper
+After=network.target
+Wants=network.target
+[Service]
+User=root
+Restart=always
+ExecStart=/etc/derp/derper -hostname derp.myself.com -a :33445 -http-port 33446 -certmode manual -certdir /etc/derp
+RestartPreventExitStatus=1
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable derp
+systemctl start derp
+
+# 写入到 tailscale 的 ACL 中
+"derpMap": {
+        "OmitDefaultRegions": true,
+        "Regions": {
+            "901": {
+                "RegionID":   901,
+                "RegionCode": "Myself",
+                "RegionName": "Myself Derper",
+                "Nodes": [
+                    {
+                        "Name":             "901a",
+                        "RegionID":         901,
+                        "DERPPort":         33445,
+                        "IPv4":   "服务器IP",
+                        "InsecureForTests": true,
+                    },
+                ],
+            },
+        },
+    },
+```
+
+## 5\. [moonlight](https://github.com/moonlight-stream/moonlight-qt) + [sunshine](https://github.com/LizardByte/Sunshine)
+
+服务端 sunshine，客户端 moonlight

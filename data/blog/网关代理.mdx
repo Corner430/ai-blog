@@ -1,0 +1,48 @@
+---
+title: '网关代理'
+date: '2023-05-25'
+tags: ['路由器']
+draft: false
+images: ['/static/images/blog/covers/cover-network.png']
+summary: '拓扑图如下： 安卓手机充当旁路网关 - Mac、Linux使用clash的TUN模式并开启ip转发 - Linux开启ip转发：sysctl -w net.ipv4.ipforward=1 - Mac开启ip转发：sysctl -w net.inet.ip.forwarding=1 > Mac系统也可以直接使用clashX Pro的增强模式实现 - ...'
+---
+
+拓扑图如下：
+![20230525163331](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230525163331.png)
+[安卓手机充当旁路网关](https://youtu.be/r6nXCgYkXTQ)
+
+- Mac、Linux使用clash的TUN模式并开启ip转发
+  - Linux开启ip转发：`sysctl -w net.ipv4.ip_forward=1`
+  - Mac开启ip转发：`sysctl -w net.inet.ip.forwarding=1`
+
+    > Mac系统也可以直接使用[clashX Pro](https://install.appcenter.ms/users/clashx/apps/clashx-pro/distribution_groups/public)的增强模式实现
+
+- 安装服务，之后reload app
+  ![20230525164402](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230525164402.png)
+
+- 此时 Service Mode旁边的地球应该从灰色变成绿色
+
+- 打开TUN Mode
+  ![20230525165051](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230525165051.png)
+
+- 接下来让其余电脑填写本机的ip作为网关即可
+
+  > 本机的网关不要修改
+
+---
+
+references
+[【建议收藏】一个视频讲清楚所有局域网共享科学上网方法，让家里所有网络设备无需安装代理工具即可翻墙，没有软路由怎么让全家科学上网？http代理/socks代理/透明代理/WIFI热点，总有一种方法适合你](https://youtu.be/GjhetHGIKLg)
+[【全网首发】windows系统充当软路由，实现全家科学上网，小白也能轻松上手，代替电视盒子的openwrt，旁路网关、旁路由、透明代理、透明网关、网关代理、网关模式](https://youtu.be/dpmnkKhBFtc)
+[将科学上网环境共享给局域网内其它设备的各种方式](https://bulianglin.com/archives/sharenetwork.html)
+
+---
+
+- 通过修改sysctl.conf文件来实现ip转发功能的开机自启动。
+
+  ```shell
+  sudo vim /etc/sysctl.conf
+  net.ipv4.ip_forward=1 # 在文件末尾添加内容
+  ```
+
+- 使修改生效：`sudo sysctl -p`
