@@ -274,11 +274,11 @@ $$ \hat{\sigma} = \text{arg} \quad \text{min}_{\sigma \in \mathcal{\sigma}\_N} \
 - $\hat{b_i}$ 是预测的 bounding box
 - $\mathcal{\sigma(i)}$ is an index within a particular permutation of N elements.
 
-$$ \mathcal{L}_{\text{match} }(y_i, \hat{y}_{\sigma(i)}) = - \mathbb{1}_{\\{c_i \neq \emptyset\\} } \hat{p}_{\sigma(i)}(c*i) + \mathbb{1}*{\\{c*i = \emptyset\\} } \mathcal{L}*{\text{box} }(b*i, \hat{b}*{\sigma(i)}) $$ - $\mathbb{1}_{\\{c_i \neq \emptyset\\} }$ 是指当 $c_i \neq \emptyset$ 时，取 1，否则取 0 - $\hat{p}_{\sigma(i)}(c_i)$ 是指预测的类别为 $c_i$ 的概率 - $\mathcal{L}_{\text{box} }(b_i, \hat{b}_{\sigma(i)})$ 是指预测的 bounding box 与 ground truth 的损失 $$ \mathcal{L}_{\text{box} }(b_i, \hat{b}_{\sigma(i)}) = \lambda*{iou} \mathcal{L}*{iou} (b*i, \hat{b}*{\sigma(i)}) + \lambda*{L_1} ||b_i - \hat{b}*{\sigma(i)}||\_1 $$
+$$ \mathcal{L}_{\text{match} }(y_i, \hat{y}_{\sigma(i)}) = - \mathbb{1}_{\{c_i \neq \emptyset\} } \hat{p}_{\sigma(i)}(c*i) + \mathbb{1}*{\{c*i = \emptyset\} } \mathcal{L}*{\text{box} }(b*i, \hat{b}*{\sigma(i)}) $$ - $\mathbb{1}_{\{c_i \neq \emptyset\} }$ 是指当 $c_i \neq \emptyset$ 时，取 1，否则取 0 - $\hat{p}_{\sigma(i)}(c_i)$ 是指预测的类别为 $c_i$ 的概率 - $\mathcal{L}_{\text{box} }(b_i, \hat{b}_{\sigma(i)})$ 是指预测的 bounding box 与 ground truth 的损失 $$ \mathcal{L}_{\text{box} }(b_i, \hat{b}_{\sigma(i)}) = \lambda*{iou} \mathcal{L}*{iou} (b*i, \hat{b}*{\sigma(i)}) + \lambda*{L_1} ||b_i - \hat{b}*{\sigma(i)}||\_1 $$
 
 > $L_1$ 损失较常用，但是对于小框和大框的损失处理有问题，因此作者加入了 $IoU$ 损失，详见原文
 
-$$ \mathcal{L}_{\text{Hungarian} }(y, \hat{y}) = \sum_{i=1}^N \[- \log \hat{p}_{\hat \sigma(i)}(c_i) + \mathbb{1}_{\\{c*i \neq \emptyset\\} } \mathcal{L}*{\text{box} }(b*i, \hat{b}*{\hat \sigma(i)})\] $$
+$$ \mathcal{L}_{\text{Hungarian} }(y, \hat{y}) = \sum_{i=1}^N [- \log \hat{p}_{\hat \sigma(i)}(c_i) + \mathbb{1}_{\{c_i \neq \emptyset\} } \mathcal{L}_{\text{box} }(b_i, \hat{b}_{\hat \sigma(i)})] $$
 
 > **事实上，作者还加了超参系数做平衡。这里使用了对数，而上文没有，是因为二者考虑的问题不一样，一个是考虑数值相对平衡，一个是考虑梯度相对平衡。**
 
@@ -422,19 +422,19 @@ logits, bboxes = detr(inputs)
 ![20231127021733](https://cdn.jsdelivr.net/gh/Corner430/Picture1/images/20231127021733.png)
 
 1.  在 stage 1 的第一部分，采用正常的 DETR 训练策略在 $D_{base}$ 上进行训练。
-2.  在 stage 1 的第二部分，进来一张图片，通过 selective search algorithm 生成一些 proposals，之后选择 top O 个 proposals，**要求这些 proposals 与 base class 的 ground truth bounding box 不重叠**。之后将这些 proposals 作为 pseudo ground truth，采用 DETR 的方式进行训练。也就是图中的 $b^`$，对应的类别是 $c^`$。
+2.  在 stage 1 的第二部分，进来一张图片，通过 selective search algorithm 生成一些 proposals，之后选择 top O 个 proposals，**要求这些 proposals 与 base class 的 ground truth bounding box 不重叠**。之后将这些 proposals 作为 pseudo ground truth，采用 DETR 的方式进行训练。也就是图中的 $b'$，对应的类别是 $c'$。
 
 - 找框：
 
-$$ \hat{\sigma} = \text{arg} \quad \text{min}_{\sigma \in \mathcal{\sigma}\_N} \sum_{i=1}^N \mathcal{L}_{\text{match} }(y_i, \hat{y}_{\sigma(i)}) $$ $$ \mathcal{L}_{\text{match} }(y_i, \hat{y}_{\sigma(i)}) = - \mathbb{1}_{\\{c_i \neq \emptyset\\} } \hat{p}_{\sigma(i)}(c*i) + \mathbb{1}*{\\{c*i = \emptyset\\} } \mathcal{L}*{\text{box} }(b*i, \hat{b}*{\sigma(i)}) $$
+$$ \hat{\sigma} = \text{arg} \quad \text{min}_{\sigma \in \mathcal{\sigma}\_N} \sum_{i=1}^N \mathcal{L}_{\text{match} }(y_i, \hat{y}_{\sigma(i)}) $$ $$ \mathcal{L}_{\text{match} }(y_i, \hat{y}_{\sigma(i)}) = - \mathbb{1}_{\{c_i \neq \emptyset\} } \hat{p}_{\sigma(i)}(c*i) + \mathbb{1}*{\{c*i = \emptyset\} } \mathcal{L}*{\text{box} }(b*i, \hat{b}*{\sigma(i)}) $$
 
 - Hungarian loss：
 
-$$ L*{hg}(y, \hat{y}) = \sum*{i=1}^N \[- \log \hat{p}_{\hat \sigma(i)}(c_i) + \mathbb{1}_{\\{c*i \neq \emptyset\\} } \mathcal{L}*{\text{box} }(b*i, \hat{b}*{\hat \sigma(i)})\] $$
+$$ L*{hg}(y, \hat{y}) = \sum*{i=1}^N [- \log \hat{p}_{\hat \sigma(i)}(c_i) + \mathbb{1}_{\{c_i \neq \emptyset\} } \mathcal{L}_{\text{box} }(b_i, \hat{b}_{\hat \sigma(i)})] $$
 
 - 在 stage 1 中的第二部分，损失为：
 
-$$ \mathcal{L}^{base}_{total} = \mathcal{L}_{hg}(y, \hat{y}) + \lambda^\` \mathcal{L}\_{hg}(y^\`, \hat{y}^\`) $$
+$$ \mathcal{L}^{base}_{total} = \mathcal{L}_{hg}(y, \hat{y}) + \lambda' \mathcal{L}\_{hg}(y', \hat{y}') $$
 
 ##### Incremental Few-Shot Fine-Tuning
 
@@ -687,9 +687,9 @@ where $h : R_+ → R_+$ is a strictly increasing function (under some technical 
 
 事实上，上述公式的右侧可以写为：
 
-$$ \[\text{max}_{|| \epsilon ||\_2 \leq \rho} \mathcal{L}_{S}(\omega + \epsilon) - \mathcal{L}_{S}(\omega)\] + \mathcal{L}_{S}(\omega) + \mathcal{h}(|| \omega ||\_2^2 / \rho^2) $$
+$$ [\text{max}_{|| \epsilon ||_2 \leq \rho} \mathcal{L}_{S}(\omega + \epsilon) - \mathcal{L}_{S}(\omega)] + \mathcal{L}\_{S}(\omega) + \mathcal{h}(|| \omega ||\_2^2 / \rho^2) $$
 
-其中最后一项可以看成是一个正则项，可以用$\lambda || \omega ||_2^2$来代替。\[\]内的代表锐度，也就是 sharpness。中间那一项是 loss。
+其中最后一项可以看成是一个正则项，可以用$\lambda || \omega ||_2^2$来代替。[]内的代表锐度，也就是 sharpness。中间那一项是 loss。
 
 故而，SAM 的损失函数为：
 
@@ -758,7 +758,7 @@ $$ \text{min}_{\omega} \mathcal{L}_{S}^{SAM}(\omega) + \lambda || \omega ||_2^2 
 
 无 code. **已发邮件，未回。**
 
-$$L = \mathcal{L}*{cls} + \mathcal{L}*{kd}$$
+$$L = \mathcal{L}_{cls} + \mathcal{L}_{kd}$$
 
 其中 $\mathcal{L}_{cls}$ 是一个专门针对于人脸识别的损失函数。
 

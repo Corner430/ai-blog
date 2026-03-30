@@ -38,9 +38,17 @@ summary: '首先在所在themes/\config.yml中找到mathjax，将其属性改为
 
 - 上划线：`\overline{}`，如：$\overline{x+y}$
 
-- 标签：`\tag{}`，如：$$\tag{3}$$
+- 标签：`\tag{}`，如：
 
-- 自动添加标签：`\begin{equation} \end{equation}`，如：$$\begin{equation} x \end{equation}$$
+$$
+\tag{3} x = 1
+$$
+
+- 自动添加标签：`\begin{equation} \end{equation}`，如：
+
+$$
+\begin{equation} x \end{equation}
+$$
 
 - 上大括号：`\overbrace{}`，如：$\overbrace{a+b+c+d}^{2.0}$
 
@@ -48,7 +56,7 @@ summary: '首先在所在themes/\config.yml中找到mathjax，将其属性改为
 
 - 上位符号：`\stackrel{上位符号}{基位符号}`，如：$\vec{x}\stackrel{\mathrm{def}}{=}{x_1,\dots,x_n}$
 
-- 上下标位置：`\sideset控制四角上下标，\overset与\underset控制上下标居中`，如：$\sideset{^a_b}{^c_d}A$,$\overset{100}A$,$\underset{100}A$,$\overset{100}{\underset{200}A}$
+- 上下标位置：`\sideset`控制四角上下标（KaTeX 不支持），`\overset`与`\underset`控制上下标居中，如：$\overset{100}A$,$\underset{100}A$,$\overset{100}{\underset{200}A}$
 
 - 分段函数：$$f(x) = \begin{cases} 0, & \text{if } x < 0 \\ x, & \text{if } x \geq 0 \end{cases}$$
 
