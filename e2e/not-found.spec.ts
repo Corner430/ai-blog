@@ -4,13 +4,13 @@ test.describe('404 Page', () => {
   test('should display 404 error page for non-existent route', async ({ page }) => {
     await page.goto('/this-page-does-not-exist')
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible()
-    await expect(page.getByText("Sorry we couldn't find this page.")).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Back to homepage' })).toBeVisible()
+    await expect(page.getByText('抱歉，页面未找到')).toBeVisible()
+    await expect(page.getByRole('link', { name: '返回首页' })).toBeVisible()
   })
 
-  test('should navigate to homepage when clicking Back to homepage', async ({ page }) => {
+  test('should navigate to homepage when clicking 返回首页', async ({ page }) => {
     await page.goto('/this-page-does-not-exist')
-    await page.getByRole('link', { name: 'Back to homepage' }).click()
+    await page.getByRole('link', { name: '返回首页' }).click()
     await expect(page).toHaveURL('/')
   })
 })

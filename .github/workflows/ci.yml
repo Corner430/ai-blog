@@ -22,4 +22,13 @@ jobs:
           cache: yarn
       - run: corepack enable
       - run: yarn install --immutable
+      - name: Lint
+        run: yarn lint
+      - name: Build
+        run: npx next build
+        env:
+          HUNYUAN_API_KEY: dummy
+          TENCENT_SECRET_ID: dummy
+          TENCENT_SECRET_KEY: dummy
+          ADMIN_PASSWORD: dummy
       - run: npx jest --ci

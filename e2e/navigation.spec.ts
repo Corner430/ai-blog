@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Desktop Navigation', () => {
   const navLinks = [
-    { name: 'Blog', href: '/blog' },
-    { name: 'Tags', href: '/tags' },
-    { name: 'Projects', href: '/projects' },
-    { name: 'About', href: '/about' },
+    { name: '博客', href: '/blog' },
+    { name: '标签', href: '/tags' },
+    { name: '项目', href: '/projects' },
+    { name: '关于', href: '/about' },
   ]
 
   for (const { name, href } of navLinks) {
@@ -15,10 +15,7 @@ test.describe('Desktop Navigation', () => {
       const navContainer = page.locator('.no-scrollbar.hidden.sm\\:flex')
       const link = navContainer.getByRole('link', { name })
       await expect(link).toBeVisible()
-      await Promise.all([
-        page.waitForURL(new RegExp(href), { timeout: 15000 }),
-        link.click(),
-      ])
+      await Promise.all([page.waitForURL(new RegExp(href), { timeout: 15000 }), link.click()])
     })
   }
 
@@ -29,6 +26,6 @@ test.describe('Desktop Navigation', () => {
     const navContainer = page.locator('.no-scrollbar.hidden.sm\\:flex')
     await expect(navContainer).not.toBeVisible()
     // Hamburger menu button should be visible
-    await expect(page.getByRole('button', { name: 'Toggle Menu' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '切换菜单' })).toBeVisible()
   })
 })

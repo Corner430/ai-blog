@@ -4,7 +4,7 @@ import { mockJsonResponse, mockErrorResponse } from './helpers/mock-api'
 test.describe('Search', () => {
   test('should open search modal when clicking search button', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.getByTestId('ai-search-modal')).toBeVisible()
   })
 
@@ -16,7 +16,7 @@ test.describe('Search', () => {
 
   test('should close search modal with ESC', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.getByTestId('ai-search-modal')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('ai-search-modal')).not.toBeVisible()
@@ -26,7 +26,7 @@ test.describe('Search', () => {
     // Mock AI search returning empty results
     await mockJsonResponse(page, '**/api/ai/search', { results: [] })
     await page.goto('/')
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     const modal = page.getByTestId('ai-search-modal')
     await modal.locator('input').fill('xyznonexistent')
     await expect(modal.getByText('未找到相关文章')).toBeVisible({ timeout: 10000 })
@@ -34,12 +34,10 @@ test.describe('Search', () => {
 
   test('should show AI search results and navigate on click', async ({ page }) => {
     await mockJsonResponse(page, '**/api/ai/search', {
-      results: [
-        { slug: 'hello-world', title: 'Hello World', summary: 'First post', score: 1 },
-      ],
+      results: [{ slug: 'hello-world', title: 'Hello World', summary: 'First post', score: 1 }],
     })
     await page.goto('/')
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     const modal = page.getByTestId('ai-search-modal')
     await modal.locator('input').fill('hello')
     // Wait for results
@@ -60,7 +58,7 @@ test.describe('Search', () => {
       })
     })
     await page.goto('/')
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     const modal = page.getByTestId('ai-search-modal')
     await modal.locator('input').fill('test query')
     await expect(modal.getByText('搜索中...')).toBeVisible({ timeout: 5000 })
@@ -69,7 +67,7 @@ test.describe('Search', () => {
   test('should show empty results when AI search returns error', async ({ page }) => {
     await mockErrorResponse(page, '**/api/ai/search', 500, 'Internal error')
     await page.goto('/')
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     const modal = page.getByTestId('ai-search-modal')
     await modal.locator('input').fill('Hello')
     // When AI is enabled and search fails, fallback keyword search has no docs loaded

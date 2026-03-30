@@ -4,7 +4,7 @@ test.describe('Blog List Page', () => {
   test('should display "All Posts" heading and article list', async ({ page }) => {
     await page.goto('/blog')
     // On desktop, the h1 is sm:hidden but the sidebar h3 "All Posts" is visible
-    const sidebar = page.locator('.hidden.sm\\:flex').filter({ hasText: 'All Posts' })
+    const sidebar = page.locator('.hidden.sm\\:flex').filter({ hasText: '全部文章' })
     await expect(sidebar).toBeVisible()
     // At least one article should be listed
     const articles = page.locator('article')
@@ -15,7 +15,10 @@ test.describe('Blog List Page', () => {
     await page.goto('/blog', { waitUntil: 'networkidle' })
     await Promise.all([
       page.waitForURL(/\/blog\/hello-world/, { timeout: 15000 }),
-      page.getByRole('link', { name: /Hello World/i }).first().click(),
+      page
+        .getByRole('link', { name: /Hello World/i })
+        .first()
+        .click(),
     ])
   })
 
@@ -23,16 +26,13 @@ test.describe('Blog List Page', () => {
     await page.goto('/blog', { waitUntil: 'networkidle' })
     const tagLink = page.locator('a[href*="/tags/"]').first()
     await expect(tagLink).toBeVisible()
-    await Promise.all([
-      page.waitForURL(/\/tags\//, { timeout: 15000 }),
-      tagLink.click(),
-    ])
+    await Promise.all([page.waitForURL(/\/tags\//, { timeout: 15000 }), tagLink.click()])
   })
 
   test('should show tag sidebar on desktop', async ({ page }) => {
     await page.goto('/blog')
     // The sidebar with tag list is visible on desktop (hidden on sm:)
-    const sidebar = page.locator('.hidden.sm\\:flex').filter({ hasText: 'All Posts' })
+    const sidebar = page.locator('.hidden.sm\\:flex').filter({ hasText: '全部文章' })
     await expect(sidebar).toBeVisible()
   })
 })

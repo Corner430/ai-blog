@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Homepage', () => {
   test('should display Latest heading and article list', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Latest' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '最新文章' })).toBeVisible()
     // At least one article should be listed
     const articles = page.locator('article')
     await expect(articles.first()).toBeVisible()
@@ -22,11 +22,8 @@ test.describe('Homepage', () => {
 
   test('should navigate to blog post when clicking Read more', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' })
-    const readMore = page.getByRole('link', { name: /Read more/i }).first()
+    const readMore = page.getByRole('link', { name: /阅读更多/i }).first()
     await expect(readMore).toBeVisible()
-    await Promise.all([
-      page.waitForURL(/\/blog\//, { timeout: 15000 }),
-      readMore.click(),
-    ])
+    await Promise.all([page.waitForURL(/\/blog\//, { timeout: 15000 }), readMore.click()])
   })
 })

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Tags Page', () => {
   test('should display Tags heading and tag list', async ({ page }) => {
     await page.goto('/tags')
-    await expect(page.getByRole('heading', { name: 'Tags' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '标签' })).toBeVisible()
     // Should have at least one tag link
     const tagLinks = page.locator('a[href*="/tags/"]')
     await expect(tagLinks.first()).toBeVisible()
@@ -19,7 +19,7 @@ test.describe('Tags Page', () => {
     await page.waitForURL(href!)
     // ListLayoutWithTags shows articles in li elements with article inside
     // On desktop, the sidebar "All Posts" text should be visible
-    const sidebar = page.locator('.hidden.sm\\:flex').filter({ hasText: 'All Posts' })
+    const sidebar = page.locator('.hidden.sm\\:flex').filter({ hasText: '全部文章' })
     await expect(sidebar).toBeVisible({ timeout: 10000 })
   })
 })
