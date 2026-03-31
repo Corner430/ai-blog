@@ -449,7 +449,7 @@ $$ \mathcal{L}^{kd}_{feat} = \frac{1}{2 N^{novel}} \sum_{i=1}^{w} \sum*{j=1}^{h}
 
 同样，对于分类器头，直接做 knowledge distillation 也不合适，为解决这个问题，如下：
 
-$$ \mathcal{L}^{kd}_{cls} = \mathcal{L}_{\mathrm{kl_div}}(\log(q^{novel}), q^{base}) $$
+$$ \mathcal{L}^{kd}_{cls} = \mathcal{L}_{\text{kl\_div}}(\log(q^{novel}), q^{base}) $$
 
 > 进来一张 novel image，通过 base model 进行预测，如果 class probability 大于 0.5，且 bounding box 与 novel class ground truth boxes 不重叠，则认为需要蒸馏，算 KL 散度。
 
