@@ -28,6 +28,9 @@ public/sitemap.xml
 # search
 /public/search.json
 
+# embedding index (generated at build time)
+/public/embedding-index.json
+
 # misc
 .DS_Store
 *.tsbuildinfo
