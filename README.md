@@ -2,7 +2,7 @@
 
 A modern blog built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/), integrated with [Tencent Hunyuan AI](https://cloud.tencent.com/document/product/1729).
 
-Based on [tailwind-nextjs-starter-blog](https://github.com/timlrx/tailwind-nextjs-starter-blog) v2. Features 111 blog posts (110 migrated from Hexo + 1 hello-world) and a full suite of AI-powered tools.
+Based on [tailwind-nextjs-starter-blog](https://github.com/timlrx/tailwind-nextjs-starter-blog) v2. Features 48 blog posts (migrated from Hexo and consolidated into comprehensive guides) and a full suite of AI-powered tools.
 
 ## AI Features
 
@@ -29,6 +29,8 @@ All AI API endpoints are protected by **rate limiting** (20 requests/min per IP)
 - **Click Animation** — Colored hearts float up on click anywhere on the page.
 - **Image Lightbox** — Click-to-zoom fullscreen image viewer on all article images using medium-zoom.
 - **Chinese Localization** — All UI text translated to Chinese (zh-CN) across layouts, navigation, and components.
+- **Resources Page** — Curated learning resources organized by category (accessible via `/resources` in the navigation bar).
+- **Projects Showcase** — Project cards with cover images, descriptions, and GitHub links (`/projects`).
 
 ## Writing Blog Posts
 
@@ -109,6 +111,8 @@ app/
 │   ├── cover/page.tsx             # Cover image management
 │   ├── tags/page.tsx              # Tag management
 │   └── writing/page.tsx           # Writing assistant
+├── resources/
+│   └── page.tsx                   # Curated learning resources page
 components/
 ├── ai/
 │   ├── AiSummary.tsx              # Streaming summary (with localStorage cache)
@@ -122,6 +126,9 @@ components/
 ├── ImageZoom.tsx                   # Click-to-zoom image lightbox (medium-zoom)
 ├── ClickAnimation.tsx             # Click heart animation
 ├── ClientGlobalWidgets.tsx        # Client-side widget wrapper (Live2D + ClickAnimation)
+data/
+├── resourcesData.ts               # Curated resources data by category
+└── projectsData.ts                # Project showcase data
 lib/
 ├── hunyuan.ts                     # Hunyuan text API wrapper (OpenAI SDK)
 ├── hunyuan-image.ts               # Hunyuan image API wrapper (OpenAI-compatible)
@@ -200,13 +207,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Blog Migration
 
-110 posts were migrated from the old Hexo blog ([corner430.github.io](https://github.com/corner430/corner430.github.io)) using `scripts/migrate-hexo.mjs`:
+Posts were originally migrated from the old Hexo blog ([corner430.github.io](https://github.com/corner430/corner430.github.io)) using `scripts/migrate-hexo.mjs`:
 
 - Converts Hexo HTML to Markdown via [turndown](https://github.com/mixmark-io/turndown)
 - Transforms Hexo frontmatter to MDX format (tags, sticky, date normalization)
-- Copies 12 post-asset images to `public/static/images/blog/`
+- Copies post-asset images to `public/static/images/blog/`
 
-2 encrypted posts (`情绪垃圾`, `节点和客户端的选择`) are not yet migrated — pending post encryption feature implementation.
+After migration, 38 fragmented posts were consolidated into 13 comprehensive guides, and low-value posts were removed, bringing the total to 48 articles.
 
 ## Deployment
 
@@ -239,7 +246,7 @@ npx playwright install   # first time only
 yarn e2e
 ```
 
-62 tests across 16 spec files covering all pages and interactions. AI APIs are mocked via `page.route()` — no real API key needed for E2E tests.
+63 tests across 16 spec files covering all pages and interactions. AI APIs are mocked via `page.route()` — no real API key needed for E2E tests.
 
 ## Build
 
