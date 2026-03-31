@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import AiSearch from '../AiSearch'
 
@@ -26,24 +26,35 @@ describe('AiSearch', () => {
     })
   })
 
-  it('renders search modal when open', () => {
-    render(<AiSearch isOpen={true} onClose={jest.fn()} />)
+  it('renders search modal when open', async () => {
+    await act(async () => {
+      render(<AiSearch isOpen={true} onClose={jest.fn()} />)
+    })
     expect(screen.getByTestId('ai-search-modal')).toBeInTheDocument()
   })
 
-  it('does not render when closed', () => {
-    render(<AiSearch isOpen={false} onClose={jest.fn()} />)
+  it('does not render when closed', async () => {
+    await act(async () => {
+      render(<AiSearch isOpen={false} onClose={jest.fn()} />)
+    })
     expect(screen.queryByTestId('ai-search-modal')).not.toBeInTheDocument()
   })
 
   it('shows empty state when no results', async () => {
-    render(<AiSearch isOpen={true} onClose={jest.fn()} />)
+    await act(async () => {
+      render(<AiSearch isOpen={true} onClose={jest.fn()} />)
+    })
     const input = screen.getByPlaceholderText(/搜索/)
-    fireEvent.change(input, { target: { value: 'some query' } })
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'some query' } })
+    })
 
     // Submit the form
     const form = input.closest('form')!
-    fireEvent.submit(form)
+    await act(async () => {
+      fireEvent.submit(form)
+    })
 
     await waitFor(() => {
       expect(screen.getByText(/未找到/)).toBeInTheDocument()

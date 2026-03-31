@@ -25,10 +25,22 @@ jobs:
       - name: Lint
         run: yarn lint
       - name: Build
-        run: yarn build
+        run: |
+          yarn build 2>&1 | tee /tmp/build.log
+          # Check for unexpected warnings in build output
+          # Ignore: punycode deprecation (upstream dep, not actionable)
+          if grep -iE 'ParseError|KaTeX parse error' /tmp/build.log | grep -v 'node_modules'; then
+            echo "::error::Build contains KaTeX parse errors. Fix the LaTeX syntax in MDX files."
+            exit 1
+          fi
+          if grep -F 'TypeScript project references are not fully supported' /tmp/build.log; then
+            echo "::error::Build contains TypeScript project references warning. Check tsconfig.json."
+            exit 1
+          fi
         env:
           HUNYUAN_API_KEY: dummy
           TENCENT_SECRET_ID: dummy
           TENCENT_SECRET_KEY: dummy
           ADMIN_PASSWORD: dummy
-      - run: npx jest --ci
+      - name: Test
+        run: npx jest --ci
