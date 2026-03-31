@@ -5,6 +5,7 @@ test.describe('Desktop Navigation', () => {
     { name: '博客', href: '/blog' },
     { name: '标签', href: '/tags' },
     { name: '项目', href: '/projects' },
+    { name: '推荐资源', href: '/resources' },
     { name: '关于', href: '/about' },
   ]
 
