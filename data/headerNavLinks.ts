@@ -3,6 +3,7 @@ const headerNavLinks = [
   { href: '/blog', title: '博客' },
   { href: '/tags', title: '标签' },
   { href: '/projects', title: '项目' },
+  { href: '/resources', title: '推荐资源' },
   { href: '/about', title: '关于' },
 ]
 
