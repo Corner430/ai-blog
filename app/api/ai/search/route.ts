@@ -9,12 +9,16 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit'
 const limiter = rateLimit()
 
 let cachedIndex: EmbeddingIndex | null = null
+let cachedIndexMtime: number | null = null
 
 async function loadIndex(): Promise<EmbeddingIndex> {
-  if (cachedIndex) return cachedIndex
   const indexPath = path.join(process.cwd(), 'public', 'embedding-index.json')
+  const stat = fs.statSync(indexPath)
+  // Reload if file has been modified (important for dev mode)
+  if (cachedIndex && cachedIndexMtime === stat.mtimeMs) return cachedIndex
   const data = fs.readFileSync(indexPath, 'utf-8')
   cachedIndex = JSON.parse(data) as EmbeddingIndex
+  cachedIndexMtime = stat.mtimeMs
   return cachedIndex
 }
 
