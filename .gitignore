@@ -59,5 +59,3 @@ test-results/
 playwright-report/
 /blob-report/
 
-# Darwin artifacts
-.darwin/
