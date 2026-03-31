@@ -1,0 +1,196 @@
+---
+title: 'NAS配置与使用指南'
+date: '2023-07-23'
+lastmod: '2024-03-31'
+tags: ['NAS', 'Ubuntu']
+draft: false
+images: ['/static/images/blog/covers/cover-diy.png']
+summary: 'NAS配置与使用完全指南，涵盖黑群晖安装（arpl/手动引导）、Ubuntu Samba挂载、自动挂载、Cloud Sync外网同步等操作。'
+---
+
+## 1. 黑群晖 NAS 安装
+
+黑群晖是指在非群晖官方硬件上安装群晖 DSM（DiskStation Manager）系统。以下介绍两种安装方案。
+
+### 准备工具
+
+- [synoboot.img 引导镜像下载](https://xpenology.club/downloads/)
+- [DSM pat 系统包下载（DS918+）](https://www.synology.com/en-global/support/download/DS918+?version=7.1#system)
+- [DSM pat 旧版本下载](https://archive.synology.com/download/Os/DSM)
+- [Win32 Disk Imager 下载](https://sourceforge.net/projects/win32diskimager/)
+- [芯片无忧 ChipEasy](https://www.upan.cc/tools/test/ChipEasy.html)（[英文版](https://www.upan.cc/tools/test/ChipEasy_EN.html)）
+
+### 方案一：arpl 自动引导
+
+通过 [arpl](https://github.com/fbelavenuto/arpl) 进行自动引导安装，操作相对简单，但可能遇到以下问题：
+
+1. **IP 分配不显示**：启动后显示 `waiting ip ……… error`。解决方案：使用 `ifconfig` 自行查看 IP 地址，然后在浏览器中通过 `http://<IP>:7681` 进入配置界面
+2. **build loader 报错**：参考 [Error: zImage not Patched #27](https://github.com/fbelavenuto/arpl/issues/27)，此问题目前暂无完美解决方案
+
+参考教程：[手把手教你安装自己的黑群晖 DMS7.1.1 NAS 系统](https://www.youtube.com/watch?v=oxD0Qb_DClA&t=282s)
+
+### 方案二：手动引导安装（推荐）
+
+如果 arpl 方案遇到问题，可以使用手动引导方式安装。
+
+准备工具如下：
+
+![20230522003434](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522003434.png)
+
+#### 步骤 1：写入引导镜像
+
+使用 Win32 Disk Imager 将 `synoboot.img` 镜像写入 U 盘：
+
+![20230522003613](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522003613.png)
+
+#### 步骤 2：查看 U 盘的 PID 和 VID
+
+使用芯片无忧（ChipEasy）查看 U 盘的 PID 和 VID 信息：
+
+![20230522003944](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522003944.png)
+
+> 注意：这里的 `0x` 前缀不要删除。
+
+#### 步骤 3：修改引导配置
+
+使用 DiskGenius 查看引导 U 盘中的文件，找到配置文件并修改 PID/VID 等参数：
+
+![20230522004235](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522004235.png)
+
+> 需要先将文件复制到桌面进行修改，修改完成后再拖回 U 盘。
+
+#### 步骤 4：查找黑群晖设备
+
+将 U 盘插入目标设备并从 U 盘启动，然后在浏览器中访问 [https://find.synology.com/](https://find.synology.com/) 查找设备。
+
+#### 步骤 5：手动安装 DSM
+
+在查找到设备后，选择「手动安装」，上传之前下载的 `.pat` 系统文件：
+
+![20230522004422](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522004422.png)
+
+#### 步骤 6：创建管理员账号
+
+安装完成后，按照提示创建管理员账号和密码：
+
+![20230522010539](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522010539.png)
+
+#### 步骤 7：完成安装
+
+安装成功后即可进入群晖 DSM 管理界面：
+
+![20230522010659](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522010659.png)
+
+![20230522010744](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230522010744.png)
+
+在「控制面板」→「文件服务」中开启网络共享服务，打上勾后就可以通过 [https://find.synology.com/](https://find.synology.com/) 找到设备。
+
+### 第三方套件源
+
+群晖官方套件中心的应用有限，推荐添加第三方套件源：[我不是矿神](https://imnks.com/)，提供大量实用的社区套件。
+
+参考教程：[保姆级黑群晖安装教程](https://zhuanlan.zhihu.com/p/515187738)
+
+## 2. Ubuntu 挂载 NAS（Samba）
+
+NAS 最常见的使用场景之一是作为网络存储，实现**储算分离**——数据统一存储在 NAS 上，各台电脑和服务器通过网络挂载访问。这在校园网或实验室环境中尤其实用，解决了校外向校内服务器传输数据不便的问题。
+
+### 2.1 安装 Samba 客户端
+
+```shell
+sudo apt update
+sudo apt install smbclient
+sudo apt install samba
+```
+
+### 2.2 查看 NAS 共享目录
+
+```shell
+smbclient -L \\<nas_ip> -U <username>
+```
+
+将 `<nas_ip>` 替换为 NAS 的 IP 地址，`<username>` 替换为 NAS 上的用户名。按提示输入密码后，会列出 NAS 上所有可用的共享文件夹。
+
+### 2.3 挂载共享文件夹
+
+首先创建本地挂载点：
+
+```shell
+sudo mkdir -p /mnt/nas
+```
+
+然后挂载：
+
+```shell
+sudo mount -t cifs -o username=<username>,password=<password>,vers=1.0 //<nas_ip>/main /mnt/nas
+```
+
+参数说明：
+
+- `-t cifs`：指定文件系统类型为 CIFS（Samba 协议）
+- `username` / `password`：NAS 的登录凭据
+- `vers=1.0`：指定 SMB 协议版本（部分旧版群晖可能需要）。如果连接失败，可以尝试 `vers=2.0` 或 `vers=3.0`
+- `//<nas_ip>/main`：NAS 上的共享文件夹路径
+- `/mnt/nas`：本地挂载点
+
+挂载成功后，`/mnt/nas` 目录下就能看到 NAS 中的文件了。
+
+## 3. 高级用法
+
+### 3.1 开机自动挂载
+
+手动挂载在重启后会失效。要实现开机自动挂载，可以编辑 `/etc/fstab` 文件：
+
+```shell
+sudo vim /etc/fstab
+```
+
+添加以下行：
+
+```
+//<nas_ip>/main /mnt/nas cifs username=<username>,password=<password>,vers=1.0,_netdev 0 0
+```
+
+- `_netdev`：表示该挂载点依赖网络，系统会等网络就绪后再尝试挂载
+
+> 出于安全考虑，建议将用户名和密码存储在单独的凭据文件中，而不是直接写在 fstab 里：
+>
+> 1. 创建凭据文件：`sudo vim /etc/nas-credentials`
+> 2. 写入内容：
+>    ```
+>    username=<username>
+>    password=<password>
+>    ```
+> 3. 设置权限：`sudo chmod 600 /etc/nas-credentials`
+> 4. fstab 中使用：`credentials=/etc/nas-credentials` 替代 `username=` 和 `password=`
+
+对于实验室服务器，可以为每个用户分配**限额文件夹或单独的限额账户**，方便管理存储空间。
+
+### 3.2 Cloud Sync 外网同步
+
+局域网挂载只能在内网使用。如果需要从外网同步数据到 NAS，可以使用群晖的 **Cloud Sync** 套件：
+
+- 支持百度网盘、Google Drive、OneDrive、Dropbox 等多种云服务
+- **不限速、不限额**，完美解决外网数据传输问题
+- 支持单向同步和双向同步
+
+在群晖套件中心安装 Cloud Sync，然后按照向导配置即可。
+
+### 3.3 搭建 Git Server
+
+群晖 NAS 还可以搭建私有 Git 服务器，用于代码版本管理：
+
+1. 在群晖套件中心安装 **Git Server** 套件
+2. 在「控制面板」→「用户」中为需要使用 Git 的用户开启 SSH 和 Git 权限
+3. 在 NAS 上创建裸仓库：
+   ```shell
+   ssh <username>@<nas_ip>
+   cd /volume1/git
+   git init --bare project.git
+   ```
+4. 在本地克隆：
+   ```shell
+   git clone ssh://<username>@<nas_ip>/volume1/git/project.git
+   ```
+
+这样就拥有了一个私有的 Git 托管服务，适合不想使用公有平台或需要内网代码管理的场景。

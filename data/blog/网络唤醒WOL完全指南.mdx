@@ -1,0 +1,217 @@
+---
+title: '网络唤醒(WOL)完全指南'
+date: '2023-05-24'
+lastmod: '2024-03-31'
+tags: ['Ubuntu', '路由器', 'OpenWrt']
+draft: false
+images: ['/static/images/blog/covers/cover-network.png']
+summary: '网络唤醒(Wake-on-LAN)完全指南，涵盖BIOS设置、Windows/Ubuntu网卡配置、OpenWrt发送唤醒包、防火墙端口转发等全流程操作。'
+---
+
+## 1. 概述
+
+网络唤醒（Wake-on-LAN，简称 WOL）是一种通过网络远程开启计算机的技术。其原理是：当计算机处于关机或休眠状态时，网卡仍然保持微弱供电并监听网络流量。当网卡收到一个特殊的**魔术包（Magic Packet）**时，会向主板发送信号，触发计算机开机。
+
+魔术包是一个包含目标网卡 MAC 地址的特殊数据包，由 6 个 `0xFF` 字节后跟 16 次重复的目标 MAC 地址组成。只要网卡、主板和操作系统都正确配置了 WOL 支持，就可以从局域网甚至互联网远程唤醒计算机。
+
+要实现 WOL，需要满足以下条件：
+
+- **主板支持**：BIOS/UEFI 中启用了 WOL 相关选项
+- **网卡支持**：有线网卡支持 WOL（绝大多数有线网卡都支持）
+- **操作系统配置**：在 OS 层面启用了网卡的 WOL 功能
+- **唤醒端**：有设备能够发送魔术包（如路由器、另一台电脑等）
+
+## 2. BIOS 设置
+
+这是 WOL 的基础，必须首先在 BIOS/UEFI 中启用唤醒功能：
+
+1. 开机时按 `Del`、`F2` 或对应按键进入 BIOS 设置界面
+2. 找到电源管理（Power Management）相关选项
+3. 将以下选项设为 **Enabled**（不同主板名称可能不同）：
+   - `Wake on LAN` / `Wake on PCI/PCIE`
+   - `Power On By PCI-E` / `Power On By PCIE Device`
+   - `Resume by LAN` / `Resume on LAN`
+4. 部分主板还需要设置关机后网卡供电：
+   - `ErP Ready` 设为 **Disabled**（ErP 节能模式会切断关机后的网卡供电）
+   - 或确保 `Deep Sleep` 设为 **Disabled**
+5. 保存并退出 BIOS
+
+> 如果 BIOS 中找不到相关选项，请查阅主板说明书或搜索对应主板型号的 WOL 设置方法。
+
+## 3. Windows 端配置
+
+在 Windows 系统中，需要在网络适配器属性中启用 WOL：
+
+1. 右键点击「开始」菜单，选择「设备管理器」
+2. 展开「网络适配器」，找到你的有线网卡（如 Intel I219-V、Realtek PCIe GbE 等）
+3. 右键点击网卡 → 「属性」→ 切换到「高级」选项卡
+4. 在属性列表中找到并启用以下项目（不同网卡名称可能略有不同）：
+   - **Wake on Magic Packet** → 设为 `Enabled`
+   - **Wake on Pattern Match** → 设为 `Enabled`（可选）
+   - **Energy Efficient Ethernet** → 设为 `Disabled`（部分网卡需要关闭此项）
+5. 切换到「电源管理」选项卡，勾选以下选项：
+   - ✅ 允许此设备唤醒计算机
+   - ✅ 只允许幻数据包唤醒计算机
+
+此外，还需要确保 Windows 电源设置不会阻止 WOL：
+
+- 打开「控制面板」→「电源选项」→「选择电源按钮的功能」
+- 点击「更改当前不可用的设置」
+- 取消勾选「启用快速启动」（快速启动可能导致 WOL 不生效）
+
+## 4. Ubuntu/Linux 端配置
+
+### 4.1 安装 ethtool
+
+```shell
+sudo apt install ethtool
+```
+
+### 4.2 检查网卡是否支持 WOL
+
+首先查看网络接口名称：
+
+```shell
+ifconfig
+# 或
+ip addr
+```
+
+找到有线网卡的接口名（常见如 `eth0`、`enp2s0`、`eno1` 等），然后检查 WOL 支持：
+
+```shell
+sudo ethtool <interface>
+```
+
+在输出中查找 `Wake-on` 行：
+
+- `Wake-on: d` — 表示网卡支持 WOL，但当前处于**禁用**状态
+- `Wake-on: g` — 表示 WOL 已**启用**（g 代表 magic packet）
+
+### 4.3 激活 WOL
+
+```shell
+sudo ethtool -s <interface> wol g
+```
+
+将 `<interface>` 替换为实际的网络接口名。执行后再次确认：
+
+```shell
+sudo ethtool <interface>
+```
+
+此时 `Wake-on` 的值应变为 `g`，表示 WOL 已成功启用。
+
+### 4.4 创建 systemd 服务（开机自动启用 WOL）
+
+上述 `ethtool` 命令在每次重启后会失效，需要创建 systemd 服务来保持 WOL 持久生效。
+
+创建服务文件：
+
+```shell
+sudo vim /etc/systemd/system/wol.service
+```
+
+写入以下内容：
+
+```bash
+[Unit]
+Description=Wake-on-LAN Configuration
+After=network.target
+
+[Service]
+ExecStart=/usr/sbin/ethtool -s enp2s0 wol g
+
+[Install]
+WantedBy=default.target
+```
+
+> 请将 `enp2s0` 替换为你的实际网络接口名。
+
+启用并启动服务：
+
+```shell
+sudo systemctl daemon-reload
+sudo systemctl enable wol.service
+sudo systemctl start wol.service
+```
+
+重启系统后，可以通过以下命令验证服务状态：
+
+```shell
+sudo systemctl status wol.service
+sudo ethtool enp2s0 | grep Wake-on
+```
+
+## 5. OpenWrt 发送唤醒包
+
+在 OpenWrt 路由器上，可以使用 `etherwake` 命令发送魔术包来唤醒目标设备。
+
+### 5.1 安装 etherwake
+
+```shell
+opkg update
+opkg install etherwake
+```
+
+### 5.2 发送唤醒命令
+
+```shell
+etherwake -i eth1 <mac_addr>
+```
+
+- `-i eth1`：指定发送唤醒包的网络接口（通常是 LAN 口对应的接口，如 `eth1` 或 `br-lan`）
+- `<mac_addr>`：目标设备的 MAC 地址，格式如 `AA:BB:CC:DD:EE:FF`
+
+如果不确定接口名称，可以用 `ifconfig` 或 `ip addr` 查看。一般来说，`br-lan` 是 LAN 桥接口，使用它发送即可：
+
+```shell
+etherwake -i br-lan AA:BB:CC:DD:EE:FF
+```
+
+### 5.3 通过 LuCI 网页界面发送
+
+OpenWrt 也提供了图形界面的网络唤醒功能：
+
+1. 登录 OpenWrt 管理界面（LuCI）
+2. 导航到「服务」→「网络唤醒」
+3. 选择目标设备的 MAC 地址或手动输入
+4. 点击「唤醒」按钮
+
+> 如果 LuCI 中没有此选项，需要安装 `luci-app-wol` 包：`opkg install luci-app-wol`
+
+## 6. 防火墙与端口转发（远程唤醒）
+
+默认情况下，WOL 只能在局域网内使用。如果需要从外网远程唤醒，需要在路由器上配置端口转发。
+
+### 6.1 开启 OpenWrt 外网访问
+
+首先确保你能从外网访问 OpenWrt 路由器：
+
+1. 登录 OpenWrt 管理界面
+2. 进入「网络」→「防火墙」→「端口转发」
+3. 添加一条规则，将外网端口（如 443 或自定义端口）转发到 OpenWrt 的管理端口（默认 80）
+4. 保存并应用
+
+> 建议使用 HTTPS 并修改默认端口以提高安全性。
+
+### 6.2 配置 WOL 端口转发
+
+WOL 魔术包默认使用 **UDP 端口 9**（也有使用端口 7 的情况）。要从外网发送 WOL 包，需要：
+
+1. 在「网络」→「防火墙」→「端口转发」中添加规则：
+   - **协议**：UDP
+   - **外部端口**：9（或自定义端口）
+   - **内部 IP 地址**：`255.255.255.255`（广播地址）
+   - **内部端口**：9
+2. 保存并应用防火墙规则
+
+### 6.3 远程唤醒方式
+
+配置完成后，你可以通过以下方式从外网唤醒设备：
+
+- **SSH 到路由器**：通过 SSH 登录 OpenWrt，然后执行 `etherwake` 命令
+- **使用在线 WOL 工具**：部分网站提供在线发送魔术包的功能
+- **手机 App**：如 Wake On Lan（Android/iOS）等应用，填入公网 IP 和 MAC 地址即可
+
+> 如果你的宽带没有公网 IP，可以配合 DDNS 或内网穿透工具（如 frp、ZeroTier）来实现远程访问。

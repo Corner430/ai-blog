@@ -1,0 +1,72 @@
+---
+title: '代理客户端工具'
+date: '2023-06-04'
+lastmod: '2024-03-31'
+tags: ['科学上网', 'Windows', 'V2Ray']
+draft: false
+images: ['/static/images/blog/covers/cover-proxy.png']
+summary: '常用代理客户端工具汇总，包括V2Ray生态（v2rayN/v2ray-core）、OpenWrt上的SSR+和Passwall插件的使用技巧与节点优化策略。'
+---
+
+## 概述
+
+本文汇总了常用的代理客户端工具，涵盖 Windows 平台的 V2Ray 生态以及 OpenWrt 路由器上的 SSR+ 和 Passwall 插件，并分享节点选择与自动切换的优化策略。
+
+## V2Ray 生态
+
+[V2Ray](https://www.v2ray.com/) 是一个功能强大的网络代理工具平台，支持多种协议（VMess、VLESS、Trojan 等），具有灵活的路由分流和流量伪装能力。
+
+### 相关资源
+
+- [神一样的工具们](https://www.v2ray.com/awesome/tools.html) — V2Ray 官方推荐的工具合集
+- [v2rayN](https://github.com/2dust/v2rayN/releases) — Windows 平台最流行的 V2Ray GUI 客户端
+- [v2ray-core](https://github.com/v2fly/v2ray-core/releases) — V2Ray 核心引擎（v2fly 社区维护版）
+
+### v2rayN 使用要点
+
+v2rayN 是 Windows 上使用最广泛的 V2Ray 图形界面客户端，功能包括：
+
+- **订阅管理**：支持导入和自动更新订阅链接
+- **多协议支持**：VMess、VLESS、Trojan、Shadowsocks 等
+- **路由规则**：内置常用分流规则，支持自定义路由
+- **测速功能**：支持批量测试节点延迟和速度
+- **系统代理**：支持设置全局代理或 PAC 模式
+
+使用时需要配合 v2ray-core 核心程序，v2rayN 会在首次运行时自动下载，也可以手动从上述链接下载放入程序目录。
+
+## OpenWrt 上的 SSR+ 和 Passwall
+
+在 OpenWrt 路由器上，SSR+（ShadowSocksR Plus+）和 Passwall 是两个常用的代理插件，可以实现全局透明代理。
+
+### SSR+ 使用技巧
+
+当节点质量不够稳定时，推荐使用 SSR+ 并进行以下优化：
+
+1. **缩短自动切换检测时间**：将自动切换的检测间隔调短（如从默认的 300 秒改为 60-120 秒），使插件能更快地检测到节点异常并切换
+2. **手动筛选自动切换节点**：不要让所有节点都参与自动切换，而是手动挑选质量较好的节点加入自动切换列表，避免切换到低质量节点
+3. **选择合适的检测方式**：可以使用 Google 连通性检测或自定义 URL 检测
+
+### Passwall 使用技巧
+
+Passwall 相比 SSR+ 支持更多协议和更灵活的分流配置：
+
+- 支持 TCP 和 UDP 分别设置不同的代理节点
+- 支持按域名、IP、端口进行细粒度分流
+- 支持 DNS 防污染（远程 DNS over TCP/DoH）
+
+### SSR+ vs Passwall 选择建议
+
+| 特性       | SSR+           | Passwall       |
+| ---------- | -------------- | -------------- |
+| 上手难度   | 简单           | 中等           |
+| 自动切换   | 内置，配置方便 | 需额外设置     |
+| 协议支持   | 较全           | 更全           |
+| 分流细粒度 | 一般           | 更灵活         |
+| 适用场景   | 节点不够优质时 | 需要精细分流时 |
+
+## 节点优化策略
+
+- **定期更新订阅**：保持节点列表的时效性
+- **多线路备份**：同时配置多个不同地区和协议的节点
+- **测试后筛选**：通过延迟测试和实际速度测试，筛选出稳定的节点加入自动切换列表
+- **分时段使用**：高峰时段和低峰时段可能适合不同的节点，可根据经验调整

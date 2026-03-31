@@ -1,0 +1,307 @@
+---
+title: 'OpenWrt完全配置指南'
+date: '2023-06-02'
+lastmod: '2024-03-31'
+tags: ['路由器', 'OpenWrt', '域名解析']
+draft: false
+images: ['/static/images/blog/covers/cover-network.png']
+summary: 'OpenWrt完全配置指南，涵盖固件选择、刷机方法、网络配置、IPv6、DDNS、单线多拨、网络唤醒等全流程操作与问题排查。'
+---
+
+本文是一份系统性的 OpenWrt 配置指南，将固件选择、刷机方法、网络配置、IPv6、DDNS、单线多拨、网络唤醒等内容整合在一起，帮助你从零开始搭建并配置 OpenWrt 软路由。
+
+## 1 固件选择与下载
+
+### 1.1 x86 设备推荐
+
+3865U 软路由价格偏高，预算有限可以考虑以下方案：
+
+- **斐讯 N1**：单臂旁路由首选，闲鱼不到一百块
+- **N270 小主机**：双千兆网口，闲鱼几十块钱
+
+### 1.2 常用固件资源
+
+**esirPG 固件**（推荐）：
+
+- 下载地址：[esirPG Google Drive](https://drive.google.com/drive/folders/1dqNUrMf9n7i3y1aSh68U5Yf44WQ3KCuh)
+- 默认信息：IP `192.168.5.1`，用户名 `root`，密码 `password`
+
+![esirPG固件列表](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230531002538.png)
+
+**零度推荐固件**：默认登录密码为 `netflixcn.com`
+
+### 1.3 Nanopi 系列固件
+
+- [Nanopi R1S/R2S/R4S/R5S 固件编译（纯净版与大杂烩）](https://github.com/stupidloud/nanopi-openwrt)
+- [R2S 固件下载合集](https://mmensee.gitbook.io/r2s-r4s/gu-jian-xia-zai-shua-ji-fang-fa/r2s-gu-jian-xia-zai-he-ji)
+- [R2S、R4S 最新 OpenWrt 固件合集](https://uzbox.com/tech/openwrt/r2s-r4s.html)
+- [恩山 sirpdboy 编译固件](https://www.right.com.cn/forum/thread-4387071-1-1.html)
+- [骷髅头编译固件](https://github.com/thomaswcy)
+- [klever1988 编译固件](https://github.com/QiuSimons/R2S-OpenWrt/releases/)
+
+### 1.4 通用 x86 固件
+
+- [openwrt.cc](https://openwrt.cc/)
+- [supes.top — 在线定制固件](https://supes.top/?target=x86/64&id=generic)（需要自行安装软件包）
+- [Openwrt-AIO](https://github.com/Chikage0o0/Openwrt-AIO)
+- [精品小包 Openwrt x86](https://www.right.com.cn/forum/forum.php?mod=viewthread&tid=8233404&extra=page=1&page=1&mobile=no)
+- [高大全 Openwrt x86](https://www.right.com.cn/forum/thread-8226979-1-1.html)
+- [lede（coolsnowwolf）](https://github.com/coolsnowwolf/lede)
+- [X86_64 多功能版本](https://drive.google.com/drive/folders/1pdJuzpwuhdq6vnN0Ovtb5r-JB7Z5bw38)
+
+### 1.5 ImmortalWrt
+
+- [ImmortalWrt 下载](https://downloads.immortalwrt.org/)
+- [ImmortalWrt GitHub](https://github.com/immortalwrt/immortalwrt)
+- [ImmortalWrt Firmware Selector](https://firmware-selector.immortalwrt.org/)
+
+> **注意**：ImmortalWrt 原版系统功能较少，不建议直接使用原版，推荐使用第三方编译的固件。
+
+---
+
+## 2 刷机方法
+
+### 2.1 USB 直刷
+
+最简单的方法，适合有 USB 启动能力的设备：
+
+1. 下载 [balena Etcher](https://etcher.balena.io/)
+2. 将 OpenWrt 镜像刷入 U 盘
+3. 设置 U 盘启动即可
+
+> 如果有硬盘转 USB 的转接设备，可以直接用同样的方式刷入硬盘，之后从该硬盘启动。
+
+### 2.2 PE 环境刷入
+
+适合需要刷入内置硬盘的场景：
+
+1. 下载 PE 系统（[IT天空](https://www.itsk.com/)、WePE 或老毛桃均可）
+
+![PE系统](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230530233054.png)
+
+2. 将 PE 系统刷入 U 盘
+3. 将 `Diskimage.exe` 和 OpenWrt 的 `.img` 镜像文件拷贝到 U 盘
+4. 从 U 盘启动进入 PE 系统
+5. 删除目标硬盘的所有分区
+6. 使用 Diskimage 将镜像写入硬盘
+
+![Diskimage写入](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230530234029.png)
+
+### 2.3 OpenWrt 刷 OpenWrt
+
+如果设备已经运行 OpenWrt，可以直接通过系统升级或命令行刷入新固件。
+
+参考视频：[旧电脑刷路由系统 Openwrt 的第三种方法](https://youtu.be/zbxTvRO9SKY?t=348)
+
+---
+
+## 3 基础网络配置与旁路由设置
+
+### 3.1 单臂旁路由配置
+
+单臂旁路由只需要一个网口，通过 LAN 口与主路由连接，适合斐讯 N1 等单网口设备。
+
+**配置步骤：**
+
+1. 设备开机后回车进入命令行界面
+2. 修改网络配置，为旁路由分配一个静态 IP：
+
+```shell
+vi /etc/config/network
+```
+
+![修改网络配置](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230531000211.png)
+
+3. 通过同局域网的设备在浏览器中访问旁路由管理界面
+4. 设置 LAN 口：
+   - 将**网关**改为主路由 IP
+   - **DNS 服务器**同样设为主路由 IP
+   - **关闭 DHCP 服务器**
+5. 配置 PassWall 等代理工具
+6. 将需要科学上网的设备的**网关和 DNS 服务器**改为旁路由 IP，或在主路由中统一设置
+
+### 3.2 单臂路由拨号上网
+
+如果需要让单臂路由直接进行 PPPoE 拨号：
+
+**接线方式：**
+
+- 光猫和路由器：LAN-LAN
+- 路由器和单臂路由：LAN-LAN
+
+**配置步骤：**
+
+1. 修改 LAN 口地址，取消 LAN 口的桥接设置，开启 DHCP 功能
+2. 手动创建 WAN 口，与 LAN 口复用同一物理接口，设置为 PPPoE 拨号
+3. 关闭上级路由器的 DHCP，将路由器设为 AP 模式
+4. 上网设备的网关和 DNS 都设为单臂路由地址
+5. 修改防火墙的区域设置，确保 LAN-WAN 之间数据流通
+6. 在 DHCP/DNS 设置中配置 DNS 转发
+
+---
+
+## 4 IPv6 配置
+
+### 4.1 基础 IPv6 开启
+
+**前提条件：** 确认运营商是否双栈下发（同时生成 wan 和 wan6），是否下发 PD（Prefix Delegation）。
+
+**所需软件包：** `odhcp6c`、`odhcpd`、`ip6tables`、`luci-proto-ipv6`（成熟固件一般自带）。
+
+**配置步骤：**
+
+1. **WAN 口设置**：在 WAN 口的高级设置中，确保已启用 IPv6 相关选项，勾选「获取 IPv6 地址」为「自动」
+2. **LAN 口设置**：
+   - IPv6 分配长度设为 `64`
+   - 在高级设置中正确配置 IPv6 相关参数
+3. **LAN 口 IPv6 设置**：配置路由通告服务（RA）、DHCPv6 服务等
+4. **DNS 设置**：取消「禁止解析 IPv6 DNS 记录」的勾选
+
+### 4.2 校园网无 PD 的 IPv6 配置
+
+> 校园网不发 PD，但 WAN 口可以拿到一个 `2408` 开头的 IPv6 公网地址，且是 `/64` 后缀，可通过中继模式让 LAN 口获取 IPv6 地址。
+
+**配置步骤：**
+
+1. 网络诊断 ping IPv6，确保通过
+2. WAN 口和 LAN 口关闭「使用内置的 IPv6 管理」
+3. 删除 IPv6 ULA 前缀
+4. LAN 口的 IPv6 设置中，将路由通告服务、DHCPv6 服务、NDP 代理全部改为**中继模式**
+5. 编辑 `/etc/config/dhcp`，添加如下配置：
+
+```shell
+config dhcp 'wan6'
+        option interface 'wan'
+        option ra 'relay'
+        option dhcpv6 'relay'
+        option ndp 'relay'
+        option master '1'
+```
+
+6. 重启路由器（或重启网卡），LAN 下设备即可获取 IPv6 地址
+7. 在 LAN 的 IPv6 设置中添加通告 DNS 服务器：`2001:4860:4860::8888` 和 `2001:4860:4860::8844`
+8. 尝试 ping 路由器的 IPv6 地址
+9. 测试外网连通性：`ping -6 www.baidu.com`
+10. 前往 [test-ipv6.com](https://test-ipv6.com/) 验证 IPv6 是否完全正常
+
+---
+
+## 5 DDNS 动态域名解析
+
+通过 Cloudflare 配置 DDNS，实现远程访问家中的 OpenWrt 及其他设备。
+
+### 5.1 Cloudflare 配置
+
+1. 在 Cloudflare 中为你的域名添加一条 **A 记录**，指向你的公网 IP
+2. 获取 Cloudflare 的 API Key：前往 [API Tokens](https://dash.cloudflare.com/profile/api-tokens) 页面，复制 Global API Key
+
+### 5.2 OpenWrt DDNS 设置
+
+1. 进入 OpenWrt 管理界面，找到 DDNS 配置页面
+2. 选择 Cloudflare 作为 DDNS 服务商
+3. 填入域名、用户名（Cloudflare 邮箱）和 API Key
+
+> **注意**：如果遇到问题，把子域名（route）改成 `www`，同时也要修改 Cloudflare 中 A 记录的名称。
+
+### 5.3 URL 转发（免端口访问）
+
+为了避免使用「域名:端口号」的方式访问，可以利用 Cloudflare 的页面规则：
+
+1. 在 Cloudflare 中设置**页面规则**（Page Rules），配置 URL 转发
+2. 添加一条与页面规则相匹配的 DNS 记录
+
+参考视频：[如何随时随地访问家中的软路由和其他设备？远程访问端口转发保姆级教程](https://youtu.be/Y0HGp94eHGU?t=889)
+
+---
+
+## 6 单线多拨
+
+### 6.1 什么是单线多拨
+
+单线多拨是通过在同一条物理线路上建立多个 PPPoE 连接，尝试实现带宽叠加的技术。
+
+### 6.2 配置方法
+
+1. 在 OpenWrt 中手动创建多个虚拟 WAN 口
+2. 每个虚拟 WAN 口使用**不同的 PPPoE 账号**进行拨号（同一账号无法多拨）
+3. 配置负载均衡策略
+
+> **重点注意**：虚拟 WAN 口的防火墙设置和防火墙区域设置必须正确配置，否则无法正常上网。
+
+### 6.3 实测结论
+
+如果拨不通，可以按照网络接口列表的顺序，自上而下重新连接各个网络接口。
+
+经过实际测试：由于 ISP（实验室网络）对接口进行了限速，**并没有实现带宽叠加的效果**，反而会导致网络更加不稳定。
+
+**结论：在大多数家用场景下，单线多拨意义不大。**
+
+参考视频：[单臂路由 N1 盒子 OpenWRT 单线多拨实现网速叠加](https://youtu.be/0uNntGhMLvI)
+
+---
+
+## 7 网络唤醒（WOL）
+
+通过 OpenWrt 远程唤醒局域网内的电脑。
+
+### 7.1 配置步骤
+
+1. **OpenWrt 端口转发**：在防火墙中添加端口转发规则，开启 OpenWrt 的外网访问
+2. **Windows 网络适配器配置**：
+   - 打开网络适配器 → 属性 → 配置
+   - 在「高级」选项卡中启用 Wake on Magic Packet、Wake on Pattern Match 等 WOL 相关选项
+   - 在「电源管理」选项卡中勾选「允许此设备唤醒计算机」
+3. **BIOS 设置**：进入主板 BIOS，启用 WOL（Wake on LAN）功能
+4. **OpenWrt 唤醒命令**：
+
+```shell
+etherwake -i eth1 <mac_addr>
+```
+
+将 `<mac_addr>` 替换为目标电脑网卡的 MAC 地址。也可以在 OpenWrt 的 LuCI 界面中使用网络唤醒功能（服务 → 网络唤醒）。
+
+---
+
+## 8 常见问题排查
+
+### 8.1 应用更改时卡住
+
+**现象**：修改任何配置后点击「应用」，界面一直卡在「正在应用更改」，具体卡在 `/etc/config/firewall` 步骤。
+
+**解决方案**：关闭**广告屏蔽大师**插件即可恢复正常。该问题与广告屏蔽插件干扰防火墙规则加载有关。
+
+参考：[immortalwrt/immortalwrt#363](https://github.com/immortalwrt/immortalwrt/issues/363)
+
+### 8.2 旁路由设备无法上网
+
+检查以下几点：
+
+- 旁路由的网关是否正确指向主路由
+- 旁路由的 DHCP 是否已关闭
+- 客户端设备的网关和 DNS 是否指向旁路由
+- 防火墙区域设置中 LAN → WAN 的转发是否开启
+
+### 8.3 IPv6 无法获取
+
+- 确认 ISP 是否支持 IPv6
+- 检查所需软件包是否已安装
+- 校园网用户尝试使用中继模式
+- 确认「禁止解析 IPv6 DNS 记录」已取消勾选
+
+### 8.4 DDNS 不更新
+
+- 确认 API Key 是否正确
+- 检查域名和子域名设置是否一致
+- 查看 OpenWrt 的 DDNS 日志定位具体错误
+
+---
+
+## 参考资料
+
+- [旧电脑刷路由系统 Openwrt 的几种方法](https://www.youtube.com/watch?v=zbxTvRO9SKY)
+- [软路由安装教程 — 零度解说](https://www.youtube.com/watch?v=nEU4hbZYj6c)
+- [免费安装软路由 — freedidi](https://www.freedidi.com/741.html)
+- [零成本体验软路由 — 闲置笔记本变身 OpenWRT](https://www.youtube.com/watch?v=VN_V9CzG6AM)
+- [恩山大神 OpenWrt 固件功能简介](https://www.youtube.com/watch?v=e4IAZdAZ60w)
+- [Openwrt LAN 口无法获取 IPv6 问题（已解决）](https://www.right.com.cn/forum/thread-3071516-1-1.html)
+- [IPv6 设置求教（已解决）](https://www.right.com.cn/forum/thread-2766108-2-1.html)

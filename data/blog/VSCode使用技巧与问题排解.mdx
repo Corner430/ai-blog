@@ -1,0 +1,130 @@
+---
+title: 'VSCode使用技巧与问题排解'
+date: '2024-07-24'
+lastmod: '2024-03-31'
+tags: ['VSCode', 'Cpp', 'Python', 'Colab']
+draft: false
+images: ['/static/images/blog/covers/cover-devtools.png']
+summary: 'VSCode实用技巧合集：自定义CSS/JS刷新、Colab远程连接、Python调试import函数、C++内存窗口模拟等常见问题与解决方案。'
+---
+
+## 概述
+
+本文汇集了 VSCode 日常使用中的几个实用技巧和问题解决方案，包括自定义样式/动画的刷新、远程连接 Google Colab、调试第三方库代码，以及在 VSCode 中模拟 Visual Studio 的内存窗口功能。
+
+## 自定义 CSS/JS 动画不生效
+
+在 VSCode 中安装了 Custom CSS and JS Loader 等插件来自定义界面动画或样式后，有时修改不会立即生效。
+
+**解决方案**：打开命令面板（`Ctrl+Shift+P` / `Cmd+Shift+P`），运行以下命令：
+
+```
+>Reload custom CSS and JS
+```
+
+执行后 VSCode 会重新加载自定义的 CSS 和 JS 文件，修改即刻生效。
+
+> 参考来源：[r/vscode](https://www.reddit.com/r/vscode/)
+
+## 使用 VSCode 连接 Google Colab
+
+通过 [colab-connect](https://github.com/amitness/colab-connect) 工具，可以将 VSCode 连接到 Google Colab 的运行时，利用 Colab 提供的免费 GPU 进行开发。
+
+### 安装
+
+在 Colab notebook 中运行：
+
+```bash
+!pip install -U git+https://github.com/amitness/colab-connect.git
+```
+
+### 使用
+
+```python
+from colabconnect import colabconnect
+
+colabconnect()
+```
+
+执行后会输出一个连接地址，在 VSCode 中通过 Remote-SSH 插件连接该地址即可使用 Colab 的计算资源。
+
+> 参考：[amitness/colab-connect](https://github.com/amitness/colab-connect)
+
+## 调试 Python 中 import 的第三方函数
+
+在 VSCode 中调试 Python 代码时，默认无法步入（Step Into）第三方库或其他模块中 import 的函数。调试器会直接跳过这些外部代码。
+
+**解决方案**：修改当前项目的 `.vscode/launch.json` 文件，将 `justMyCode` 设置为 `false`：
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}
+```
+
+> **注意**：调试时需要确保选中了项目中配置的 `launch.json` 对应的调试配置。如果使用的是全局配置，`justMyCode` 的修改不会生效。可以在调试面板的下拉菜单中确认当前激活的调试配置。
+
+## 在 VSCode 中模拟 Visual Studio 的内存窗口
+
+Visual Studio 提供了强大的内存查看窗口，可以直观地查看变量在内存中的存储情况：
+
+![Visual Studio内存窗口](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230417145048.png)
+
+VSCode 原生不支持类似的内存窗口功能，但可以通过编写一个 C++ 工具函数来实现类似的效果。以下 `print_memory` 函数接收内存起始地址与大小，按每行 4 字节显示十六进制值及对应的可打印 ASCII 字符（不可打印字符显示为 `.`）：
+
+```cpp
+/* 在每行的末尾打印出当前行的四个字节所对应的ASCII字符（仅打印可打印的ASCII字符，其它字符显示为'.'）
+
+将要显示的内存区域的起始地址和大小作为参数传递。 */
+#include <stdio.h>
+#include <stdint.h>
+
+void print_memory(const void* start_addr, size_t num_bytes) {
+    const uint8_t* data = (const uint8_t*)start_addr;
+    const uintptr_t start_address = (uintptr_t)start_addr;
+    const uintptr_t end_address = start_address + num_bytes;
+    const size_t bytes_per_row = 4;
+    char ascii[bytes_per_row + 1]; // 用于存储当前行的ASCII字符
+    ascii[bytes_per_row] = '\0';
+    for (uintptr_t i = start_address; i < end_address; i++) {
+        if ((i - start_address) % bytes_per_row == 0) {
+            printf("%p  ", (void*)i);
+        }
+        printf("%02X ", data[i - start_address]);
+        ascii[i % bytes_per_row] = (data[i - start_address] >= 32 && data[i - start_address] <= 126) ? data[i - start_address] : '.'; // 只显示可打印的ASCII字符，其它显示为'.'
+        if ((i - start_address + 1) % bytes_per_row == 0) {
+            printf(" %s\n", ascii);
+        }
+    }
+    if ((end_address - start_address) % bytes_per_row != 0) {
+        // 输出最后一行的ASCII字符
+        for (size_t i = (end_address - start_address) % bytes_per_row; i < bytes_per_row; i++) {
+            printf("   ");
+            ascii[i] = ' ';
+        }
+        printf(" %s\n", ascii);
+    }
+}
+
+int main() {
+    int32_t arr[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    print_memory(arr, sizeof(arr));
+    return 0;
+}
+```
+
+运行效果如下：
+
+![内存打印效果](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230417150156.png)
+
+输出中每行显示地址、4 字节的十六进制值，以及对应的 ASCII 字符。这在调试数据结构、网络协议解析等场景下非常实用。
