@@ -55,6 +55,13 @@ const projectsData: Project[] = [
     imgSrc: '/static/images/projects/mysql-crash-course.png',
     href: 'https://github.com/Corner430/mysql-crash-course-interactive',
   },
+  {
+    title: 'sudo make me a picture',
+    description:
+      '开箱即用的 AI 文生图提示词速查表，涵盖 36 种视觉风格（草图、3D、插画、摄影、科幻、创意六大类），提供 Prompt 构建公式与程序员 Top 7 推荐风格，复制即用，适合为技术文档、博客和演示文稿快速生成配图。',
+    imgSrc: '/static/images/projects/sudo-make-me-a-picture.png',
+    href: 'https://github.com/Corner430/sudo-make-me-a-picture',
+  },
 ]
 
 export default projectsData
