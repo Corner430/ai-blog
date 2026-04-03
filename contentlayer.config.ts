@@ -1,6 +1,9 @@
 import { defineDocumentType, ComputedFields, makeSource } from 'contentlayer2/source-files'
 import { writeFileSync } from 'fs'
 import { execFile } from 'child_process'
+import { promisify } from 'util'
+
+const execFileAsync = promisify(execFile)
 import readingTime from 'reading-time'
 import { slug } from 'github-slugger'
 import path from 'path'
@@ -185,12 +188,17 @@ export default makeSource({
     const { allBlogs } = await importData()
     createTagCount(allBlogs)
     createSearchIndex(allBlogs)
-    // Trigger embedding index generation (incremental)
+    // Trigger embedding index generation (incremental) — await to avoid race condition during build
     const scriptPath = path.join(process.cwd(), 'scripts', 'generate-embeddings.mjs')
-    const child = execFile('node', [scriptPath], { env: process.env }, (err, stdout, stderr) => {
+    try {
+      const { stdout, stderr } = await execFileAsync('node', [scriptPath], { env: process.env })
       if (stdout) process.stdout.write(stdout)
       if (stderr) process.stderr.write(stderr)
-      if (err) console.error('[contentlayer] Embedding generation failed:', err.message)
-    })
+    } catch (err) {
+      console.error(
+        '[contentlayer] Embedding generation failed:',
+        err instanceof Error ? err.message : err
+      )
+    }
   },
 })

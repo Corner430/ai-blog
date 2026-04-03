@@ -11,14 +11,31 @@ const limiter = rateLimit()
 let cachedIndex: EmbeddingIndex | null = null
 let cachedIndexMtime: number | null = null
 
-async function loadIndex(): Promise<EmbeddingIndex> {
+async function loadIndex(request: Request): Promise<EmbeddingIndex> {
+  // Try filesystem first (works in dev and some deployment targets)
   const indexPath = path.join(process.cwd(), 'public', 'embedding-index.json')
-  const stat = fs.statSync(indexPath)
-  // Reload if file has been modified (important for dev mode)
-  if (cachedIndex && cachedIndexMtime === stat.mtimeMs) return cachedIndex
-  const data = fs.readFileSync(indexPath, 'utf-8')
-  cachedIndex = JSON.parse(data) as EmbeddingIndex
-  cachedIndexMtime = stat.mtimeMs
+  try {
+    const stat = fs.statSync(indexPath)
+    if (cachedIndex && cachedIndexMtime === stat.mtimeMs) return cachedIndex
+    const data = fs.readFileSync(indexPath, 'utf-8')
+    cachedIndex = JSON.parse(data) as EmbeddingIndex
+    cachedIndexMtime = stat.mtimeMs
+    return cachedIndex
+  } catch {
+    // Filesystem access failed (e.g. Vercel serverless) — fetch from public URL
+  }
+
+  if (cachedIndex) return cachedIndex
+
+  // Derive the origin from the incoming request
+  const url = new URL(request.url)
+  const origin = url.origin
+  const res = await fetch(`${origin}/embedding-index.json`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch embedding index: ${res.status} ${res.statusText}`)
+  }
+  cachedIndex = (await res.json()) as EmbeddingIndex
+  cachedIndexMtime = null
   return cachedIndex
 }
 
@@ -61,7 +78,7 @@ export async function POST(request: Request) {
 
     const queryEmbedding = embeddingResp.data[0].embedding
 
-    const index = await loadIndex()
+    const index = await loadIndex(request)
     const results = searchByEmbedding(queryEmbedding, index)
 
     return NextResponse.json({ results })
