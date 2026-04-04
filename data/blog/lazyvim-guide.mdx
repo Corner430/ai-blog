@@ -335,20 +335,49 @@ return {
   {
     "ojroques/nvim-osc52",
     config = function()
-      require("osc52").setup({
+      local osc52 = require("osc52")
+      osc52.setup({
         max_length = 0,
-        silent = false,
+        silent = true,
         trim = false,
       })
 
-      local function copy()
-        if vim.v.event.operator == "y" and vim.v.event.regname == "" then
-          require("osc52").copy_register("")
+      -- 自定义 OSC52 发送：通过 tmux client tty 直接写入
+      -- nvim 的 stderr 在 tmux 中不连接终端 pty，需要绕过
+      local function send_osc52(text)
+        local b64 = require("osc52.base64").enc(text)
+        local seq = string.format("\027]52;c;%s\007", b64)
+
+        if os.getenv("TMUX") then
+          local handle = io.popen("tmux list-clients -F '#{client_tty}' 2>/dev/null")
+          if handle then
+            local ttys = handle:read("*a")
+            handle:close()
+            for tty in ttys:gmatch("[^\n]+") do
+              local f = io.open(tty, "w")
+              if f then
+                f:write(seq)
+                f:close()
+                return
+              end
+            end
+          end
         end
+
+        -- fallback: 非 tmux 环境使用插件默认方式
+        osc52.copy(text)
       end
 
       vim.api.nvim_create_autocmd("TextYankPost", {
-        callback = copy,
+        callback = function()
+          if vim.v.event.operator == "y" then
+            local reg = vim.v.event.regname
+            local text = vim.fn.getreg(reg)
+            if text and #text > 0 then
+              send_osc52(text)
+            end
+          end
+        end,
       })
     end,
   },
@@ -358,31 +387,47 @@ return {
 在 `~/.config/nvim/lua/config/options.lua` 末尾添加：
 
 ```lua
--- SSH 环境不使用系统剪贴板 provider，由 nvim-osc52 插件处理
-vim.opt.clipboard = ""
+-- 系统剪贴板集成（OSC52 通过 TextYankPost 同步到终端剪贴板）
+vim.opt.clipboard = "unnamedplus"
 ```
 
-> **注意：** 不要设为 `"unnamedplus"`。SSH 环境下没有系统剪贴板 provider，`unnamedplus` 会导致 Neovim 尝试调用不存在的 provider 而非 OSC52。
+### 8.3 tmux 配置要求
 
-### 8.3 终端兼容性
+在 tmux 中使用 OSC52，需要在 `~/.tmux.conf` 中添加：
 
-| 终端               | 支持 OSC52                          |
-| ------------------ | ----------------------------------- |
-| iTerm2             | ✅                                  |
-| WezTerm            | ✅                                  |
-| Alacritty          | ✅                                  |
-| Windows Terminal   | ✅                                  |
-| kitty              | ✅                                  |
-| macOS Terminal.app | ❌                                  |
-| tmux               | ⚠️ 需配置 `set -g set-clipboard on` |
+```bash
+# OSC52 剪贴板：external 模式放行应用发出的 OSC52
+set -g set-clipboard external
 
-### 8.4 故障排除
+# 允许应用的 OSC52 穿透 tmux 到达终端
+set -g allow-passthrough on
 
-| 问题               | 解决方案                                                                         |
-| ------------------ | -------------------------------------------------------------------------------- |
-| 复制后本地无法粘贴 | 检查终端是否支持 OSC52                                                           |
-| tmux 中不工作      | `~/.tmux.conf` 添加 `set -g set-clipboard on` 并 `tmux source-file ~/.tmux.conf` |
-| 插件未加载         | `:Lazy` 中搜索 osc52 确认已安装                                                  |
+# 声明终端支持 clipboard
+set -as terminal-features ",xterm-256color:RGB:clipboard"
+```
+
+> **为什么需要通过 tmux tty 发送？** nvim-osc52 插件默认写 stderr（`/dev/fd/2`），但 nvim 在 tmux 中启动时，stderr 不直接连接终端 pty，导致 OSC52 序列无法到达终端。上面的配置通过 `tmux list-clients` 获取真实的 client tty 并直接写入，绕过了这个问题。
+
+### 8.4 终端兼容性
+
+| 终端               | 支持 OSC52          |
+| ------------------ | ------------------- |
+| iTerm2             | ✅                  |
+| WezTerm            | ✅                  |
+| Alacritty          | ✅                  |
+| Windows Terminal   | ✅                  |
+| kitty              | ✅                  |
+| macOS Terminal.app | ❌                  |
+| tmux               | ⚠️ 需配置（见上方） |
+
+### 8.5 故障排除
+
+| 问题               | 解决方案                                                                                            |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| 复制后本地无法粘贴 | 检查终端是否支持 OSC52                                                                              |
+| tmux 中不工作      | 确认 `set-clipboard external` + `allow-passthrough on`                                              |
+| 使用 yanky 插件    | 确保 TextYankPost 回调中不检查 `regname == ""`，yanky 会改变寄存器                                  |
+| 验证 OSC52 通道    | 在 tmux 中执行 `printf '\033]52;c;%s\a' "$(echo -n 'test' \| base64)"`，然后本地粘贴看是否有 `test` |
 
 ## 9 SSH 环境 Markdown 远程预览
 

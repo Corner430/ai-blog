@@ -1,0 +1,419 @@
+---
+title: 'tmux 实用指南：SSH 开发必备的终端复用器'
+date: '2026-04-04'
+tags: ['Linux', 'tmux']
+draft: false
+images: ['/static/images/blog/covers/cover-tmux.png']
+summary: '一篇面向 SSH 远程开发场景的 tmux 配置指南。涵盖会话管理、分屏操作、Vi 复制模式、OSC52 剪贴板互通、状态栏美化，附完整配置文件。'
+---
+
+## 1 为什么需要 tmux
+
+通过 SSH 连接远程服务器时，如果网络断开，终端里的进程就会丢失。tmux 解决了这个问题：
+
+- **会话持久化**：断开 SSH 后，tmux 会话仍在运行，重新连接后 `tmux attach` 即可恢复
+- **终端复用**：一个窗口内分出多个窗格（pane），同时查看代码和运行程序
+- **窗口管理**：多个窗口（window）之间快速切换，类似浏览器标签页
+
+## 2 基础概念
+
+tmux 有三层结构：
+
+```
+Session（会话）
+├── Window 1（窗口）
+│   ├── Pane 1（窗格）
+│   └── Pane 2
+├── Window 2
+│   └── Pane 1
+└── Window 3
+    ├── Pane 1
+    ├── Pane 2
+    └── Pane 3
+```
+
+- **Session**：一组窗口的集合，可以按项目划分（如 `blog`、`cpp`）
+- **Window**：一个全屏的终端页面，类似标签页
+- **Pane**：窗口内的分屏区域
+
+## 3 安装
+
+```bash
+# Ubuntu/Debian
+sudo apt install tmux
+
+# CentOS/RHEL
+sudo yum install tmux
+
+# macOS
+brew install tmux
+```
+
+## 4 Prefix 键
+
+tmux 的所有快捷键都需要先按 Prefix 键。默认是 `Ctrl+b`，但它和 Vim 的翻页冲突，建议改为 `Ctrl+a`：
+
+```bash
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+```
+
+下文中 `<prefix>` 均指 `Ctrl+a`。
+
+## 5 会话管理
+
+| 操作               | 命令/快捷键                 |
+| ------------------ | --------------------------- |
+| 新建会话           | `tmux new -s name`          |
+| 列出会话           | `tmux ls`                   |
+| 接入会话           | `tmux attach -t name`       |
+| 断开会话（不关闭） | `<prefix> d`                |
+| 关闭会话           | `tmux kill-session -t name` |
+| 切换会话           | `<prefix> s`（弹出列表）    |
+| 重命名会话         | `<prefix> $`                |
+
+常用工作流：每个项目一个 session，SSH 断开后 `tmux attach` 恢复。
+
+## 6 窗口操作
+
+| 操作             | 快捷键                      |
+| ---------------- | --------------------------- |
+| 新建窗口         | `<prefix> c`                |
+| 切换到下一个窗口 | `<prefix> n`                |
+| 切换到上一个窗口 | `<prefix> p`                |
+| 按编号切换       | `Alt+1` ~ `Alt+9`（需配置） |
+| 重命名窗口       | `<prefix> ,`                |
+| 关闭窗口         | `<prefix> &`                |
+
+配置 `Alt+数字` 快速切换窗口：
+
+```bash
+bind -n M-1 select-window -t 1
+bind -n M-2 select-window -t 2
+bind -n M-3 select-window -t 3
+# ...以此类推
+```
+
+## 7 窗格（分屏）
+
+### 7.1 分屏操作
+
+默认的分屏键不直观，建议用 `|` 和 `-`：
+
+```bash
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+```
+
+`-c "#{pane_current_path}"` 让新窗格保持当前目录。
+
+### 7.2 窗格切换
+
+Vim 风格的 hjkl 切换：
+
+```bash
+# 需要 prefix
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# 无需 prefix（Alt + hjkl）
+bind -n M-h select-pane -L
+bind -n M-j select-pane -D
+bind -n M-k select-pane -U
+bind -n M-l select-pane -R
+```
+
+### 7.3 调整大小
+
+```bash
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+```
+
+`-r` 表示可连续按（不用每次重新按 prefix）。
+
+## 8 Vi 复制模式
+
+tmux 内置了复制模式，配合 Vi 键位非常高效：
+
+```bash
+setw -g mode-keys vi
+```
+
+### 8.1 操作流程
+
+1. `<prefix> [` 进入复制模式
+2. 用 hjkl 移动光标
+3. `v` 开始选择（`V` 行选择）
+4. `y` 复制选中内容
+5. `<prefix> ]` 粘贴
+
+### 8.2 按键配置
+
+```bash
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi V send-keys -X select-line
+bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'bash ~/.tmux-osc52.sh'
+bind -T copy-mode-vi Escape send-keys -X cancel
+```
+
+### 8.3 鼠标支持
+
+```bash
+set -g mouse on
+bind -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel 'bash ~/.tmux-osc52.sh'
+```
+
+开启后可以用鼠标拖选复制、滚轮翻页、点击切换窗格。
+
+## 9 OSC52 剪贴板互通
+
+SSH 环境下最大的痛点：复制的内容无法粘贴到本地电脑。OSC52 协议可以解决这个问题。
+
+### 9.1 原理
+
+OSC52（Operating System Command 52）是一种终端转义序列，通过 SSH 连接将文本写入本地终端的剪贴板，无需 X11 转发。流程：
+
+```
+nvim yank → OSC52 序列 → tmux 透传 → SSH 通道 → 本地终端 → 系统剪贴板
+```
+
+### 9.2 tmux 配置
+
+```bash
+# 终端色彩 + 剪贴板支持
+set -g default-terminal "tmux-256color"
+set -as terminal-features ",xterm-256color:RGB:clipboard"
+
+# 放行应用（vim 等）发出的 OSC52
+set -g set-clipboard external
+
+# 允许 OSC52 穿透 tmux 到达终端
+set -g allow-passthrough on
+```
+
+三个设置缺一不可：
+
+- `set-clipboard external`：允许 tmux 处理 OSC52 并转发到终端
+- `allow-passthrough on`：允许应用程序的转义序列穿透 tmux
+- `terminal-features ... clipboard`：声明终端支持剪贴板功能
+
+### 9.3 OSC52 转发脚本
+
+创建 `~/.tmux-osc52.sh`：
+
+```bash
+#!/bin/bash
+buf=$(cat)
+encoded=$(printf '%s' "$buf" | base64 | tr -d '\n')
+tmux list-clients -F '#{client_tty}' | while read tty; do
+  printf '\033]52;c;%s\a' "$encoded" > "$tty"
+done
+```
+
+这个脚本被 tmux 的 `copy-pipe-and-cancel` 调用，将复制内容通过 OSC52 发送到所有连接的终端。
+
+### 9.4 验证
+
+在 tmux 中执行：
+
+```bash
+printf '\033]52;c;%s\a' "$(echo -n 'hello' | base64)"
+```
+
+然后在本地 `Cmd+V`，如果能粘贴出 `hello` 就说明 OSC52 通道正常。
+
+### 9.5 Neovim 集成
+
+tmux 内使用 Neovim 时，nvim-osc52 插件的 stderr 不直接连接终端 pty，需要通过 tmux client tty 发送。详见 [LazyVim 完全指南](/blog/lazyvim-guide) 的 OSC52 章节。
+
+### 9.6 终端兼容性
+
+| 终端               | 支持 |
+| ------------------ | ---- |
+| iTerm2             | ✅   |
+| WezTerm            | ✅   |
+| Alacritty          | ✅   |
+| Windows Terminal   | ✅   |
+| kitty              | ✅   |
+| macOS Terminal.app | ❌   |
+
+## 10 重要基础设置
+
+```bash
+# 窗口/窗格编号从 1 开始（0 太远了）
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on
+
+# 消除 ESC 延迟 — Vim 用户必须设
+set -sg escape-time 0
+
+# 历史记录
+set -g history-limit 50000
+
+# focus events 传递给应用（Vim autoread 需要）
+set -g focus-events on
+
+# 重新加载配置
+bind r source-file ~/.tmux.conf \; display-message "Config reloaded!"
+```
+
+`escape-time 0` 对 Vim/Neovim 用户至关重要，否则按 `ESC` 会有明显延迟。
+
+## 11 状态栏美化
+
+以 Tokyo Night 配色为例：
+
+```bash
+set -g status-position bottom
+set -g status-interval 5
+set -g status-style "bg=#1a1b26,fg=#a9b1d6"
+
+set -g status-left "#[bg=#7aa2f7,fg=#1a1b26,bold] #S #[default] "
+set -g status-left-length 20
+
+set -g status-right "#[fg=#7aa2f7]%m-%d %H:%M "
+
+setw -g window-status-current-format "#[bg=#7aa2f7,fg=#1a1b26,bold] #I:#W "
+setw -g window-status-format " #I:#W "
+
+set -g pane-border-style "fg=#3b4261"
+set -g pane-active-border-style "fg=#7aa2f7"
+set -g message-style "bg=#7aa2f7,fg=#1a1b26"
+```
+
+效果：深色背景 + 蓝色高亮，和 LazyVim 的 Tokyo Night 主题一致。
+
+## 12 快捷键速查表
+
+### 会话
+
+| 快捷键       | 操作       |
+| ------------ | ---------- |
+| `<prefix> d` | 断开会话   |
+| `<prefix> s` | 列出会话   |
+| `<prefix> $` | 重命名会话 |
+
+### 窗口
+
+| 快捷键       | 操作           |
+| ------------ | -------------- |
+| `<prefix> c` | 新建窗口       |
+| `<prefix> ,` | 重命名窗口     |
+| `<prefix> &` | 关闭窗口       |
+| `Alt+数字`   | 切换到指定窗口 |
+
+### 窗格
+
+| 快捷键             | 操作                    |
+| ------------------ | ----------------------- |
+| `<prefix> \|`      | 水平分屏                |
+| `<prefix> -`       | 垂直分屏                |
+| `Alt+h/j/k/l`      | 切换窗格（无需 prefix） |
+| `<prefix> H/J/K/L` | 调整窗格大小            |
+| `<prefix> x`       | 关闭窗格                |
+| `<prefix> z`       | 最大化/还原窗格         |
+
+### 复制模式
+
+| 快捷键       | 操作                     |
+| ------------ | ------------------------ |
+| `<prefix> [` | 进入复制模式             |
+| `v`          | 开始选择                 |
+| `V`          | 行选择                   |
+| `y`          | 复制（同步到本地剪贴板） |
+| `Esc`        | 退出复制模式             |
+| `<prefix> ]` | 粘贴                     |
+
+### 其他
+
+| 快捷键       | 操作           |
+| ------------ | -------------- |
+| `<prefix> r` | 重新加载配置   |
+| `<prefix> ?` | 列出所有快捷键 |
+| `<prefix> t` | 显示时钟       |
+
+## 13 完整配置文件
+
+以下是本文涉及的完整 `~/.tmux.conf`，可直接使用：
+
+```bash
+# Prefix 键改为 Ctrl+a
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# 终端色彩 + OSC52 剪贴板
+set -g default-terminal "tmux-256color"
+set -as terminal-features ",xterm-256color:RGB:clipboard"
+set -g set-clipboard external
+set -g allow-passthrough on
+
+# 鼠标
+set -g mouse on
+bind -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel 'bash ~/.tmux-osc52.sh'
+
+# 基础
+set -g history-limit 50000
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on
+set -sg escape-time 0
+set -g display-time 2000
+set -g focus-events on
+
+# Vi 复制模式
+setw -g mode-keys vi
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi V send-keys -X select-line
+bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'bash ~/.tmux-osc52.sh'
+bind -T copy-mode-vi Escape send-keys -X cancel
+
+# 快捷键
+bind r source-file ~/.tmux.conf \; display-message "Config reloaded!"
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+bind c new-window -c "#{pane_current_path}"
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+bind -n M-h select-pane -L
+bind -n M-j select-pane -D
+bind -n M-k select-pane -U
+bind -n M-l select-pane -R
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+bind -n M-1 select-window -t 1
+bind -n M-2 select-window -t 2
+bind -n M-3 select-window -t 3
+bind -n M-4 select-window -t 4
+bind -n M-5 select-window -t 5
+bind -n M-6 select-window -t 6
+bind -n M-7 select-window -t 7
+bind -n M-8 select-window -t 8
+bind -n M-9 select-window -t 9
+
+# 状态栏 (Tokyo Night)
+set -g status-position bottom
+set -g status-interval 5
+set -g status-style "bg=#1a1b26,fg=#a9b1d6"
+set -g status-left "#[bg=#7aa2f7,fg=#1a1b26,bold] #S #[default] "
+set -g status-left-length 20
+set -g status-right "#[fg=#7aa2f7]%m-%d %H:%M "
+setw -g window-status-current-format "#[bg=#7aa2f7,fg=#1a1b26,bold] #I:#W "
+setw -g window-status-format " #I:#W "
+set -g pane-border-style "fg=#3b4261"
+set -g pane-active-border-style "fg=#7aa2f7"
+set -g message-style "bg=#7aa2f7,fg=#1a1b26"
+```
+
+别忘了创建 `~/.tmux-osc52.sh`（见第 9.3 节），然后 `tmux source-file ~/.tmux.conf` 加载配置。
