@@ -1,22 +1,120 @@
 ---
-title: 'terminal dictionary'
+title: 'Linux 终端词典工具推荐：告别浏览器查词'
 date: '2023-04-03'
+lastmod: '2026-04-04'
 tags: ['Linux']
 draft: false
 images: ['/static/images/blog/covers/cover-linux.png']
-summary: '本文介绍两款查词工具，含GitHub项目Wudao-dict及sdcv。sdcv可通过sudo apt-get install安装，词典存于~/.stardict/dic，支持-n（词名）、-p（音标）、-u（释义）等选项；并提供星际译王词库及简体中文词典下载链接，助用户灵活查词。'
+summary: '推荐三款实用的终端词典工具：kd（Go 单文件、离线+在线、支持 NeoVim 插件）、sdcv（纯离线 StarDict 词库）、Wudao-dict-plus（Python 增强版无道词典），帮你在命令行里高效查词翻译。'
 ---
 
-##### 1\. [Wudao-dict](https://github.com/ChestnutHeng/Wudao-dict)
+写代码时遇到不认识的单词，切到浏览器查词再切回来，打断思路。终端词典可以让你不离开命令行就完成查词，保持专注。
 
-##### 2\. sdcv
+本文介绍三款当前可用且在维护的终端词典工具，各有侧重，按推荐顺序排列。
 
-`sudo apt-get install sdcv`
-Dictionary path **/home/corner/.stardict/dic**, that is **~/.stardict/dic**
-\-sdcv \[options\] word
-\-n: Only display the names of words.
-\-p: Only display the phonetic transcription of the word.
-\-u: Only display the definition of the word.
+## 1. kd — 最推荐的终端词典
 
-- [StarDict Dictionaries – 星际译王词库](https://web.archive.org/web/20200702000038/http://download.huzheng.org/)
-- [zh_CN 简体中文词典](http://download.huzheng.org/zh_CN/)
+[kd](https://github.com/Karmenzind/kd) 是一款用 Go 编写的跨平台命令行词典，灵感来自无道词典，但做了彻底重写。**单文件零依赖**，下载即用。
+
+### 特性
+
+- 本地 10 万词离线词库，首次运行自动下载
+- 在线查询有道词典，本地没有的词自动联网
+- 支持长句翻译（`-t` 参数）
+- 支持发音（`-s` 参数，需要能访问 Google）
+- 支持 JSON 输出，方便脚本集成
+- 有 NeoVim 插件 [kd_translate.nvim](https://github.com/SilverofLight/kd_translate.nvim)，可以在编辑器内直接查词
+- 支持 Linux、macOS、Windows
+
+### 安装
+
+```bash
+# 一键安装脚本
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scripts/install.sh)"
+
+# Arch Linux
+yay -S kd-bin
+```
+
+### 使用
+
+```bash
+kd hello          # 查单词
+kd "good morning" # 查词组
+kd -t "这段话的意思是什么"  # 长句翻译
+kd -s hello       # 查词并发音
+```
+
+### NeoVim 集成
+
+如果你用 LazyVim 或其他 NeoVim 配置，可以安装 `kd_translate.nvim` 插件，在编辑器内直接查词，非常方便。
+
+## 2. sdcv — 纯离线词典
+
+[sdcv](https://github.com/Dushistov/sdcv)（StarDict Console Version）是 StarDict 的命令行版本，读取 StarDict 格式的词库文件，**完全离线**，不依赖任何网络服务。
+
+### 安装
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install sdcv
+
+# CentOS/RHEL
+sudo yum install sdcv
+
+# Arch Linux
+sudo pacman -S sdcv
+```
+
+### 词库配置
+
+sdcv 从 `~/.stardict/dic` 目录读取词库文件。你需要自己下载词库：
+
+- [sdcv-dict](https://github.com/boxmaking/sdcv-dict) — 打包好的常用词库，下载后放到 `~/.stardict/dic/` 即可
+- [StarDict 词库存档](https://web.archive.org/web/20200702000038/http://download.huzheng.org/) — 星际译王原始词库（Internet Archive 存档）
+
+### 使用
+
+```bash
+sdcv hello         # 查词，显示所有已安装词库的结果
+sdcv -n hello      # 只显示词名
+sdcv -u hello      # 只显示释义
+sdcv -l            # 列出已安装的词库
+```
+
+sdcv 的优势是**永远不会失效**——它不依赖任何在线服务，只要词库文件在就能用。适合网络不好或追求极致稳定性的场景。
+
+## 3. Wudao-dict-plus — 无道词典增强版
+
+[Wudao-dict-plus](https://github.com/Syize/Wudao-dict-plus) 是原 [Wudao-dict](https://github.com/ChestnutHeng/Wudao-dict) 的增强重制版。原版无道词典已经停更多年（最后更新 2019 年），这个增强版修复了原版的问题并持续维护。
+
+### 安装
+
+```bash
+pip install wudao-dict-plus
+```
+
+### 使用
+
+```bash
+wd hello      # 英译中
+wd 你好       # 中译英（自动检测语言）
+wd -S hello   # 简短模式
+wd -L hello   # 详细模式
+```
+
+### 特点
+
+- 用 SQLite 存储离线词库，继承自原版无道词典
+- 支持在线查询有道词典，并将结果缓存到本地
+- Python 3.8+ 环境，pip 一键安装
+
+## 对比总结
+
+| 工具     | 语言   | 离线        | 在线    | 翻译 | 安装难度       | 维护状态 |
+| -------- | ------ | ----------- | ------- | ---- | -------------- | -------- |
+| **kd**   | Go     | ✅ 10万词   | ✅ 有道 | ✅   | 低（单文件）   | 活跃     |
+| **sdcv** | C++    | ✅ 依赖词库 | ❌      | ❌   | 低（包管理器） | 稳定     |
+| **wd**   | Python | ✅ SQLite   | ✅ 有道 | ❌   | 低（pip）      | 活跃     |
+
+**我的选择**：日常查词用 **kd**，它响应快、功能全、不折腾。sdcv 作为纯离线备选保留。如果你习惯 Python 生态，Wudao-dict-plus 也是不错的选择。
