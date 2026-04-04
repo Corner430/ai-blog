@@ -79,9 +79,13 @@ async function main() {
   const total = files.length
 
   if (SKIP_FIRST > 0) {
-    console.log(`Found ${allFiles.length} MDX files, processing ${total - SKIP_FIRST} (skipping first ${SKIP_FIRST} already done + ${SKIP_FILES.size} excluded)`)
+    console.log(
+      `Found ${allFiles.length} MDX files, processing ${total - SKIP_FIRST} (skipping first ${SKIP_FIRST} already done + ${SKIP_FILES.size} excluded)`
+    )
   } else {
-    console.log(`Found ${allFiles.length} MDX files, processing ${total} (skipping ${SKIP_FILES.size})`)
+    console.log(
+      `Found ${allFiles.length} MDX files, processing ${total} (skipping ${SKIP_FILES.size})`
+    )
   }
   console.log()
 

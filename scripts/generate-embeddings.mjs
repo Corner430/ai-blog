@@ -142,7 +142,8 @@ export async function generateEmbeddings(allBlogs) {
 }
 
 // When run as standalone script (e.g., from package.json build)
-const isMainModule = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))
+const isMainModule =
+  process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))
 if (isMainModule || (!process.argv[1] && import.meta.url.includes('generate-embeddings'))) {
   generateEmbeddings(null).catch((err) => {
     console.error('[generate-embeddings] Fatal error:', err.message)
