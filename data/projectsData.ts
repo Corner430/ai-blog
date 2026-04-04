@@ -35,13 +35,6 @@ const projectsData: Project[] = [
     href: 'https://github.com/Corner430/lazyvim-installer',
   },
   {
-    title: 'Go 与 C++ 对比学习课程',
-    description:
-      '专为 C++ 开发者设计的 Go 语言学习教程。通过逐章对比两门语言在语法、并发模型、内存管理、错误处理、接口与泛型等方面的异同，帮助有 C++ 基础的开发者快速掌握 Go 的核心概念与最佳实践。',
-    imgSrc: '/static/images/projects/go-for-cpp-developers.png',
-    href: 'https://github.com/Corner430/go-for-cpp-developers',
-  },
-  {
     title: 'WPA/WPA2 密码字典',
     description:
       '精心整理的 WPA/WPA2 WiFi 密码字典集合，用于无线网络安全审计与渗透测试学习。包含常见弱密码、数字组合、手机号模式等多种字典文件，配合 aircrack-ng 等工具使用，仅供授权安全测试用途。',
