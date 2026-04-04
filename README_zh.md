@@ -109,7 +109,6 @@ app/
 │   │   ├── login/route.ts         # 管理后台认证
 │   │   └── tags/write/route.ts    # 写入标签到 MDX frontmatter
 │   ├── pageviews/route.ts         # Umami 页面浏览代理
-│   └── newsletter/route.ts        # 邮件订阅
 ├── admin/
 │   ├── page.tsx                   # 管理后台首页
 │   ├── cover/page.tsx             # 封面图管理

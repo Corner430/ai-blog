@@ -109,7 +109,6 @@ app/
 │   │   ├── login/route.ts         # Admin authentication
 │   │   └── tags/write/route.ts    # Write tags to MDX frontmatter
 │   ├── pageviews/route.ts         # Umami page view proxy
-│   └── newsletter/route.ts        # Newsletter subscription
 ├── admin/
 │   ├── page.tsx                   # Admin dashboard home
 │   ├── cover/page.tsx             # Cover image management
