@@ -358,8 +358,11 @@ return {
 在 `~/.config/nvim/lua/config/options.lua` 末尾添加：
 
 ```lua
-vim.opt.clipboard = "unnamedplus"
+-- SSH 环境不使用系统剪贴板 provider，由 nvim-osc52 插件处理
+vim.opt.clipboard = ""
 ```
+
+> **注意：** 不要设为 `"unnamedplus"`。SSH 环境下没有系统剪贴板 provider，`unnamedplus` 会导致 Neovim 尝试调用不存在的 provider 而非 OSC52。
 
 ### 8.3 终端兼容性
 
@@ -381,7 +384,39 @@ vim.opt.clipboard = "unnamedplus"
 | tmux 中不工作      | `~/.tmux.conf` 添加 `set -g set-clipboard on` 并 `tmux source-file ~/.tmux.conf` |
 | 插件未加载         | `:Lazy` 中搜索 osc52 确认已安装                                                  |
 
-## 9 从传统 Vim 迁移
+## 9 SSH 环境 Markdown 远程预览
+
+LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 SSH 环境下 `:MarkdownPreview` 会因为找不到浏览器而报错。
+
+### 9.1 配置远程预览
+
+在 `~/.config/nvim/lua/plugins/markdown.lua` 中添加：
+
+```lua
+{
+  "iamcco/markdown-preview.nvim",
+  optional = true,
+  opts = function()
+    vim.g.mkdp_open_to_the_world = 1       -- 允许外部访问
+    vim.g.mkdp_open_ip = "你的服务器IP"     -- 替换为实际 IP
+    vim.g.mkdp_port = 8888                  -- 固定端口
+    vim.g.mkdp_echo_preview_url = 1         -- 在终端打印预览 URL
+    vim.g.mkdp_browser = "echo"             -- 不尝试打开本地浏览器
+  end,
+}
+```
+
+### 9.2 使用方法
+
+1. 在 nvim 中打开 Markdown 文件
+2. 执行 `:MarkdownPreview`
+3. 在本地浏览器访问 `http://<服务器IP>:8888`
+
+预览会实时同步编辑内容。确保服务器防火墙放行了 8888 端口。
+
+> 如果使用安装器，这些配置会自动完成（自动检测服务器 IP）。
+
+## 10 从传统 Vim 迁移
 
 如果你之前使用传统 Vim + vim-plug 的配置方案，以下是对照表：
 
@@ -403,7 +438,7 @@ vim.opt.clipboard = "unnamedplus"
 
 核心 Vim 操作（`hjkl`、`ciw`、`dd`、`/search`、宏、寄存器等）在 LazyVim 中完全一致，无需重新学习。
 
-## 10 快捷键速查表
+## 11 快捷键速查表
 
 ### 文件
 
