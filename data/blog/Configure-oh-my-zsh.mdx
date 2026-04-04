@@ -1,40 +1,116 @@
 ---
-title: 'Configure oh-my-zsh'
+title: 'Oh My Zsh 安装与配置指南'
 date: '2023-04-03'
-tags: ['Oh My Zsh', 'Zsh', 'Shell', 'Bash']
+tags: ['Oh My Zsh', 'Zsh', 'Shell', 'Linux']
 draft: false
 images: ['/static/images/blog/covers/cover-linux.png']
-summary: '本文介绍在Linux系统中安装配置ZSH的方法，包括通过apt安装ZSH及基础组件，用脚本安装Oh My ZSH，克隆自动建议、语法高亮等插件至自定义目录，编辑.zshrc启用插件并设置ys主题，提升终端交互体验。'
+summary: '本文介绍如何在 Linux 系统上安装 Zsh 并配置 Oh My Zsh，包括常用插件的安装与启用，打造高效美观的终端环境。'
 ---
 
-- Install ZSH
-  `sudo apt install zsh-autosuggestions zsh-syntax-highlighting zsh`
+## 前言
 
-- Install [Oh my ZSH.](https://github.com/ohmyzsh/ohmyzsh)
-  `sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"`
+Zsh 是一款功能强大的 Shell，相比默认的 Bash，它提供了更好的自动补全、拼写纠正和主题支持。而 [Oh My Zsh](https://github.com/ohmyzsh/ohmyzsh) 是一个社区驱动的 Zsh 配置管理框架，内置了大量插件和主题，可以大幅提升终端使用体验。
 
-- Install plugins.
-  - autosuggesions plugin
-    `git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions`
-  - zsh-syntax-highlighting plugin
-    `git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting`
-  - zsh-fast-syntax-highlighting plugin
-    `git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting`
-  - zsh-autocomplete plugin
-    `git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM/plugins/zsh-autocomplete`
+## 安装 Zsh
 
-- Enable plugins by adding them to .zshrc.
-  - Open .zshrc
-    `vim ~/.zshrc`
-  - Find the line which says `plugins=(git)`.
-  - Replace that line with `plugins=(git vi-mode z zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete)`
+在 Ubuntu/Debian 系统上，通过 apt 安装 Zsh 及相关组件：
 
-- `ZSH_THEME="ys"`
+```bash
+sudo apt install zsh zsh-autosuggestions zsh-syntax-highlighting
+```
 
-- References
-  [Oh my ZSH](https://github.com/ohmyzsh/ohmyzsh)
-  [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)
-  [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
-  [zsh-fast-syntax-highlighting](https://github.com/zdharma/fast-syntax-highlighting)
-  [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete)
-  [Oh my zsh.](https://gist.github.com/n1snt/454b879b8f0b7995740ae04c5fb5b7df)
+安装完成后，可以运行 `zsh --version` 确认安装成功。
+
+## 安装 Oh My Zsh
+
+使用官方提供的安装脚本一键安装：
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+安装过程中会提示是否将 Zsh 设为默认 Shell，选择"是"即可。
+
+## 安装插件
+
+Oh My Zsh 的强大之处在于其丰富的插件生态。以下是几个推荐插件：
+
+### zsh-autosuggestions
+
+根据历史命令自动提示补全建议，按右方向键即可采纳。
+
+```bash
+git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions
+```
+
+### zsh-syntax-highlighting
+
+为终端命令提供语法高亮，正确的命令显示为绿色，错误的显示为红色，输入时即可发现拼写错误。
+
+```bash
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting
+```
+
+### fast-syntax-highlighting
+
+比 zsh-syntax-highlighting 更快的语法高亮插件，支持更丰富的高亮规则。
+
+```bash
+git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting
+```
+
+### zsh-autocomplete
+
+提供实时的自动补全菜单，输入时会自动弹出候选项列表。
+
+```bash
+git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM/plugins/zsh-autocomplete
+```
+
+## 配置 .zshrc
+
+编辑 Zsh 配置文件：
+
+```bash
+vim ~/.zshrc
+```
+
+### 启用插件
+
+找到 `plugins=(git)` 这一行，替换为：
+
+```bash
+plugins=(git vi-mode z zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete)
+```
+
+其中 `git`、`vi-mode`、`z` 是 Oh My Zsh 内置插件，无需额外安装：
+
+- **git**：提供 Git 命令的别名和补全
+- **vi-mode**：在终端中使用 Vi 键位操作
+- **z**：根据访问频率快速跳转到常用目录
+
+### 设置主题
+
+找到 `ZSH_THEME` 配置项，修改为：
+
+```bash
+ZSH_THEME="ys"
+```
+
+`ys` 是一款简洁实用的主题，显示用户名、主机名、当前目录和 Git 分支信息。
+
+### 使配置生效
+
+保存文件后，执行以下命令使配置立即生效：
+
+```bash
+source ~/.zshrc
+```
+
+## 参考链接
+
+- [Oh My Zsh](https://github.com/ohmyzsh/ohmyzsh)
+- [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)
+- [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
+- [fast-syntax-highlighting](https://github.com/zdharma-continuum/fast-syntax-highlighting)
+- [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete)
