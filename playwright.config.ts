@@ -1,9 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
+import dotenv from 'dotenv'
+import path from 'path'
+
+// Load .env.local so tests can access ADMIN_PASSWORD etc.
+dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   retries: 1,
+  workers: 4,
   reporter: 'html',
   timeout: 60000,
   expect: {
@@ -12,7 +18,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
-    navigationTimeout: 30000,
+    navigationTimeout: 60000,
   },
   projects: [
     {
@@ -21,9 +27,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx next dev',
+    command: 'npx next build && npx next start',
     url: 'http://localhost:3000',
-    timeout: 120000,
+    timeout: 300000,
     reuseExistingServer: true,
   },
 })

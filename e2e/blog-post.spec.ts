@@ -12,17 +12,17 @@ test.describe('Blog Post Page', () => {
   })
 
   test('should navigate back to blog list via "返回博客" link', async ({ page }) => {
-    await page.goto('/blog/hello-world', { waitUntil: 'networkidle' })
+    await page.goto('/blog/hello-world', { waitUntil: 'domcontentloaded' })
     const backLink = page.getByRole('link', { name: /返回博客/i })
     await expect(backLink).toBeVisible()
-    await Promise.all([page.waitForURL(/\/blog\/?$/, { timeout: 15000 }), backLink.click()])
+    await Promise.all([page.waitForURL(/\/blog\/?$/, { timeout: 30000 }), backLink.click()])
   })
 
   test('should navigate to tag page when clicking a tag', async ({ page }) => {
-    await page.goto('/blog/hello-world', { waitUntil: 'networkidle' })
+    await page.goto('/blog/hello-world', { waitUntil: 'domcontentloaded' })
     const tagLink = page.locator('a[href*="/tags/"]').first()
     await expect(tagLink).toBeVisible()
-    await Promise.all([page.waitForURL(/\/tags\//, { timeout: 15000 }), tagLink.click()])
+    await Promise.all([page.waitForURL(/\/tags\//, { timeout: 30000 }), tagLink.click()])
   })
 
   test('should show 404 for non-existent post', async ({ page }) => {

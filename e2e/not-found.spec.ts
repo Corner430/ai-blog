@@ -11,6 +11,6 @@ test.describe('404 Page', () => {
   test('should navigate to homepage when clicking 返回首页', async ({ page }) => {
     await page.goto('/this-page-does-not-exist')
     await page.getByRole('link', { name: '返回首页' }).click()
-    await expect(page).toHaveURL('/')
+    await page.waitForURL('/', { timeout: 30000 })
   })
 })

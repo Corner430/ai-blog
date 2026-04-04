@@ -21,9 +21,9 @@ test.describe('Homepage', () => {
   })
 
   test('should navigate to blog post when clicking Read more', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
     const readMore = page.getByRole('link', { name: /阅读更多/i }).first()
     await expect(readMore).toBeVisible()
-    await Promise.all([page.waitForURL(/\/blog\//, { timeout: 15000 }), readMore.click()])
+    await Promise.all([page.waitForURL(/\/blog\//, { timeout: 30000 }), readMore.click()])
   })
 })

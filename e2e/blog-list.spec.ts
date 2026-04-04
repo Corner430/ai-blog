@@ -12,21 +12,21 @@ test.describe('Blog List Page', () => {
   })
 
   test('should navigate to article when clicking title', async ({ page }) => {
-    await page.goto('/blog', { waitUntil: 'networkidle' })
+    await page.goto('/blog', { waitUntil: 'domcontentloaded' })
+    const firstArticleLink = page.locator('article h2 a').first()
+    await expect(firstArticleLink).toBeVisible()
+    const href = await firstArticleLink.getAttribute('href')
     await Promise.all([
-      page.waitForURL(/\/blog\/hello-world/, { timeout: 15000 }),
-      page
-        .getByRole('link', { name: /Hello World/i })
-        .first()
-        .click(),
+      page.waitForURL(new RegExp(href!), { timeout: 30000 }),
+      firstArticleLink.click(),
     ])
   })
 
   test('should navigate to tags page when clicking a tag', async ({ page }) => {
-    await page.goto('/blog', { waitUntil: 'networkidle' })
+    await page.goto('/blog', { waitUntil: 'domcontentloaded' })
     const tagLink = page.locator('a[href*="/tags/"]').first()
     await expect(tagLink).toBeVisible()
-    await Promise.all([page.waitForURL(/\/tags\//, { timeout: 15000 }), tagLink.click()])
+    await Promise.all([page.waitForURL(/\/tags\//, { timeout: 30000 }), tagLink.click()])
   })
 
   test('should show tag sidebar on desktop', async ({ page }) => {

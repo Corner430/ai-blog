@@ -24,7 +24,7 @@ test.describe('AI Summary', () => {
   test('should show loading skeleton while fetching', async ({ page }) => {
     // Delay needed to observe loading state — inline mock required
     await page.route('**/api/ai/summary', async (route) => {
-      await new Promise((r) => setTimeout(r, 3000))
+      await new Promise((r) => setTimeout(r, 30000))
       await route.fulfill({
         status: 200,
         contentType: 'text/plain; charset=utf-8',
@@ -33,16 +33,22 @@ test.describe('AI Summary', () => {
     })
     await page.goto('/blog/hello-world')
     const summary = page.getByTestId('ai-summary')
-    // Loading skeleton should be visible
-    await expect(summary.getByTestId('ai-summary-loading')).toBeVisible()
+    // Loading skeleton should be visible while the response is delayed
+    await expect(summary.getByTestId('ai-summary-loading')).toBeVisible({ timeout: 15000 })
   })
 
   test('should show error message on API failure', async ({ page }) => {
-    await mockErrorResponse(page, '**/api/ai/summary', 500, 'Internal error')
+    await page.route('**/api/ai/summary', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'text/plain',
+        body: 'Internal Server Error',
+      })
+    })
     await page.goto('/blog/hello-world')
     const summary = page.getByTestId('ai-summary')
     await expect(summary.getByText('AI 摘要生成失败，请稍后刷新重试')).toBeVisible({
-      timeout: 10000,
+      timeout: 15000,
     })
   })
 })

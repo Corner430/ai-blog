@@ -37,7 +37,7 @@ export async function mockChatStream(page: Page, responseText: string, delay?: n
       headers: {
         'content-type': 'text/event-stream; charset=utf-8',
         'cache-control': 'no-cache',
-        'connection': 'keep-alive',
+        connection: 'keep-alive',
         'x-vercel-ai-ui-message-stream': 'v1',
       },
       body: lines.join('\n'),
@@ -80,12 +80,7 @@ export async function mockJsonResponse(
 /**
  * Mock an error response for the given URL.
  */
-export async function mockErrorResponse(
-  page: Page,
-  url: string,
-  status: number,
-  error: string
-) {
+export async function mockErrorResponse(page: Page, url: string, status: number, error: string) {
   await page.route(url, async (route) => {
     await route.fulfill({
       status,
@@ -102,7 +97,7 @@ export async function mockAdminArticles(
   page: Page,
   articles: Array<{ filename: string; title: string; tags: string[]; content: string }>
 ) {
-  await page.route('**/api/admin/articles', async (route) => {
+  await page.route(/\/api\/admin\/articles/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

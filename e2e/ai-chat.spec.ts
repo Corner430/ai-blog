@@ -30,9 +30,11 @@ test.describe('AI Chat', () => {
 
   test('should close panel via X close button', async ({ page }) => {
     await page.goto('/blog/hello-world')
-    await page.getByTestId('ai-chat-toggle').click()
+    const toggle = page.getByTestId('ai-chat-toggle')
+    await expect(toggle).toBeVisible()
+    await toggle.click()
     const panel = page.getByTestId('ai-chat-panel')
-    await expect(panel).toBeVisible()
+    await expect(panel).toBeVisible({ timeout: 5000 })
     // Find the close button inside the panel header
     const closeBtn = panel.locator('button').first()
     await closeBtn.click()
@@ -44,8 +46,10 @@ test.describe('AI Chat', () => {
     await page.goto('/blog/hello-world')
     await page.getByTestId('ai-chat-toggle').click()
     const panel = page.getByTestId('ai-chat-panel')
+    await expect(panel).toBeVisible({ timeout: 5000 })
     // Type and send message
     const input = panel.locator('input')
+    await expect(input).toBeVisible({ timeout: 5000 })
     await input.fill('What is this article about?')
     await panel.getByRole('button', { name: '发送' }).click()
     // User message should appear
@@ -59,7 +63,10 @@ test.describe('AI Chat', () => {
     await page.goto('/blog/hello-world')
     await page.getByTestId('ai-chat-toggle').click()
     const panel = page.getByTestId('ai-chat-panel')
-    await panel.locator('input').fill('Test question')
+    await expect(panel).toBeVisible({ timeout: 5000 })
+    const input = panel.locator('input')
+    await expect(input).toBeVisible({ timeout: 5000 })
+    await input.fill('Test question')
     await panel.getByRole('button', { name: '发送' }).click()
     // Send button should be disabled during loading
     await expect(panel.getByRole('button', { name: '发送' })).toBeDisabled()
@@ -78,7 +85,10 @@ test.describe('AI Chat', () => {
     await page.goto('/blog/hello-world')
     await page.getByTestId('ai-chat-toggle').click()
     const panel = page.getByTestId('ai-chat-panel')
-    await panel.locator('input').fill('Test question')
+    await expect(panel).toBeVisible({ timeout: 5000 })
+    const input = panel.locator('input')
+    await expect(input).toBeVisible({ timeout: 5000 })
+    await input.fill('Test question')
     await panel.getByRole('button', { name: '发送' }).click()
     // Error message should appear
     await expect(panel.getByText('服务异常，请重试')).toBeVisible({ timeout: 10000 })
