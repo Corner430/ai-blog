@@ -1,0 +1,832 @@
+---
+title: 'Lazygit 完全指南：终端里的 Git 可视化操作'
+date: '2026-04-05'
+tags: ['开发工具']
+draft: false
+images: ['/static/images/blog/covers/cover-lazygit.png']
+summary: '从 Git 基础到 Lazygit 高级用法的完整指南。涵盖界面操作、分支管理、交互式变基、冲突解决、LazyVim 集成，以及多平台 SSH 配置和常见问题排解。'
+---
+
+![题图](/static/images/blog/lazygit-guide/hero.png)
+
+## 1 前言
+
+Git 是每个开发者必备的版本控制工具，但纯命令行操作往往让人望而却步——记不住的参数、看不清的分支图、令人头疼的交互式变基……
+
+[Lazygit](https://github.com/jesseduffield/lazygit) 正是为了解决这些痛点而生的。它是一个用 Go 编写的终端 Git 可视化工具（TUI），在 GitHub 上拥有超过 75k stars，MIT 开源协议。通过直观的面板和快捷键操作，你可以在终端中完成几乎所有 Git 操作——暂存单行代码、交互式变基、解决冲突、Cherry-Pick——全都不需要记忆复杂的命令参数。
+
+如果你使用 LazyVim，那更有福了：按下 `<leader>gg` 即可在浮动窗口中打开 Lazygit，无缝切换编码与版本控制。
+
+本文将从 Git 基础概念出发，带你全面掌握 Lazygit 的使用。无论你是 Git 新手还是想提升效率的老手，都能在这里找到有用的内容。
+
+**前置条件**：已安装 Git 并完成基本配置（`user.name` 和 `user.email`）。
+
+## 2 Git 基础回顾
+
+在深入 Lazygit 之前，先快速回顾 Git 的核心概念。这些概念对应着 Lazygit 中的各个面板和操作。
+
+### 2.1 四大区域
+
+Git 的工作流程围绕四个区域展开：
+
+![Git 四大区域](/static/images/blog/lazygit-guide/git-areas.png)
+
+| 区域                         | 说明                  | 对应命令     | Lazygit 操作   |
+| ---------------------------- | --------------------- | ------------ | -------------- |
+| 工作区 (Working Directory)   | 你正在编辑的文件      | —            | Files 面板查看 |
+| 暂存区 (Staging Area)        | `git add` 后的文件    | `git add`    | `space` 暂存   |
+| 本地仓库 (Local Repository)  | `git commit` 后的记录 | `git commit` | `c` 提交       |
+| 远程仓库 (Remote Repository) | `git push` 后的代码   | `git push`   | `P` 推送       |
+
+理解这四个区域至关重要：Lazygit 的 Files 面板对应工作区和暂存区，Commits 面板对应本地仓库，Remotes 标签对应远程仓库。
+
+### 2.2 基本工作流
+
+![Git 基本工作流](/static/images/blog/lazygit-guide/git-workflow.png)
+
+日常 Git 工作流非常简单：
+
+```bash
+git clone <repo-url>       # 克隆远程仓库
+git pull                    # 拉取最新代码
+# ... 编辑文件 ...
+git add .                   # 将修改添加到暂存区
+git commit -m "描述"        # 提交到本地仓库
+git push                    # 推送到远程仓库
+```
+
+在 Lazygit 中，这些操作变得更加直观：
+
+| 命令行                | Lazygit 操作                              |
+| --------------------- | ----------------------------------------- |
+| `git add .`           | `a`（暂存全部）或 `space`（暂存单个文件） |
+| `git commit -m "msg"` | `c` -> 输入消息 -> `Enter`                |
+| `git push`            | `P`                                       |
+| `git pull`            | `p`                                       |
+| `git status`          | 打开 Lazygit 即可看到                     |
+| `git diff`            | 选中文件自动显示差异                      |
+| `git log`             | Commits 面板实时显示                      |
+
+### 2.3 SSH 配置
+
+使用 SSH 协议与远程仓库通信是推荐的方式，免去每次输入密码的麻烦。
+
+**生成密钥**：
+
+```bash
+ssh-keygen -t rsa -C "your@email.com"
+```
+
+按提示完成后，公钥默认在 `~/.ssh/id_rsa.pub`。将公钥内容复制到 GitHub/GitLab 的 SSH Keys 设置中。
+
+**验证连接**：
+
+```bash
+ssh -T git@github.com
+# Hi username! You've successfully authenticated...
+```
+
+> 如果遇到 SSH 连接问题，参见本文 [12 常见问题](#12-常见问题) 章节。
+
+## 3 安装与配置
+
+### 3.1 各平台安装
+
+**macOS（Homebrew）**：
+
+```bash
+brew install lazygit
+```
+
+**Ubuntu / Debian**：
+
+```bash
+LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*')
+curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_$(uname -m | sed 's/aarch64/arm64/').tar.gz"
+tar xf lazygit.tar.gz lazygit
+sudo install lazygit -D -t /usr/local/bin/
+```
+
+**Arch Linux**：
+
+```bash
+sudo pacman -S lazygit
+```
+
+**Go 安装**（任何平台）：
+
+```bash
+go install github.com/jesseduffield/lazygit@latest
+```
+
+**验证安装**：
+
+```bash
+lazygit --version
+```
+
+### 3.2 基础配置
+
+Lazygit 的配置文件位于 `~/.config/lazygit/config.yml`（Linux/macOS）。
+
+常用配置项：
+
+```yaml
+gui:
+  language: zh-CN # 中文界面
+  showRandomTip: false # 关闭启动提示
+  nerdFontsVersion: '3' # 使用 Nerd Fonts 图标
+  theme:
+    activeBorderColor:
+      - green
+      - bold
+
+os:
+  editCommand: nvim # 外部编辑器
+
+git:
+  autoFetch: true # 自动 fetch（大仓库可关闭）
+  paging:
+    colorArg: always
+    pager: delta --dark --paging=never # 使用 delta 作为 diff 工具（可选）
+```
+
+| 配置项                 | 说明            | 默认值 |
+| ---------------------- | --------------- | ------ |
+| `gui.language`         | 界面语言        | `en`   |
+| `gui.showRandomTip`    | 启动时显示提示  | `true` |
+| `gui.nerdFontsVersion` | Nerd Fonts 版本 | `""`   |
+| `os.editCommand`       | 外部编辑器      | `""`   |
+| `git.autoFetch`        | 自动 fetch      | `true` |
+| `git.diffContextSize`  | diff 上下文行数 | `3`    |
+
+### 3.3 Shell 别名
+
+推荐设置简短别名，加到 `~/.bashrc` 或 `~/.zshrc`：
+
+```bash
+alias lg='lazygit'
+```
+
+如果你希望退出 Lazygit 时自动切换到对应目录（在工作树间切换时特别有用）：
+
+```bash
+lg() {
+    export LAZYGIT_NEW_DIR_FILE=~/.lazygit/newdir
+    lazygit "$@"
+    if [ -f $LAZYGIT_NEW_DIR_FILE ]; then
+        cd "$(cat $LAZYGIT_NEW_DIR_FILE)"
+        rm -f $LAZYGIT_NEW_DIR_FILE > /dev/null
+    fi
+}
+```
+
+## 4 界面概览
+
+在任意 Git 仓库中运行 `lazygit`（或 `lg`），你会看到如下布局：
+
+![Lazygit 界面布局](/static/images/blog/lazygit-guide/lazygit-panels.png)
+
+### 4.1 五大面板
+
+Lazygit 的界面由左侧的五个面板和右侧的主视图组成：
+
+| 面板             | 快捷键 | 功能                     |
+| ---------------- | ------ | ------------------------ |
+| Status（状态）   | `1`    | 当前仓库信息、分支名称   |
+| Files（文件）    | `2`    | 工作区文件变更、暂存操作 |
+| Branches（分支） | `3`    | 本地分支、远程分支、标签 |
+| Commits（提交）  | `4`    | 提交历史、变基、拣选     |
+| Stash（贮藏）    | `5`    | 贮藏列表管理             |
+
+### 4.2 面板导航
+
+| 操作                                       | 快捷键                   |
+| ------------------------------------------ | ------------------------ |
+| 切换面板                                   | `h` / `l` 或数字键 `1-5` |
+| 面板内上下移动                             | `j` / `k` 或方向键       |
+| 切换子标签（如分支面板内的本地/远程/标签） | `[` / `]`                |
+| 搜索 / 过滤                                | `/`                      |
+| 切换屏幕模式（正常/半屏/全屏）             | `+` / `_`                |
+| 打开帮助菜单                               | `?`                      |
+| 退出 Lazygit                               | `q`                      |
+
+### 4.3 主视图
+
+右侧的主视图会根据左侧选中项目自动显示对应内容：
+
+- 选中文件 → 显示 diff
+- 选中提交 → 显示提交详情和变更
+- 选中分支 → 显示分支提交日志
+
+按 `Enter` 可以进入更详细的视图（如逐行查看文件差异），按 `0` 可以聚焦主视图进行滚动。
+
+## 5 核心操作
+
+### 5.1 查看文件状态与差异
+
+进入 Lazygit 后，Files 面板会自动显示所有已修改的文件（对应 `git status`）。
+
+- 用 `j` / `k` 在文件间移动，右侧自动显示 diff
+- 按 `Enter` 进入文件的逐行视图
+- 用 `{` / `}` 调整 diff 上下文显示范围（显示更多或更少的周围代码）
+- 按 `` ` `` 切换文件树视图（平铺 / 树形）
+
+### 5.2 暂存与提交
+
+这是 Lazygit 最常用的操作，对应命令行的 `git add` + `git commit`：
+
+**文件级暂存**：
+
+| 操作                    | 快捷键  |
+| ----------------------- | ------- |
+| 暂存 / 取消暂存单个文件 | `space` |
+| 暂存 / 取消暂存所有文件 | `a`     |
+
+**行级暂存**（精确控制提交内容）：
+
+1. 在 Files 面板选中文件，按 `Enter` 进入逐行视图
+2. 按 `space` 暂存/取消暂存当前行
+3. 按 `v` 开启范围选择模式，用 `j`/`k` 选择多行，再按 `space` 暂存
+4. 按 `a` 暂存/取消暂存整个代码块（hunk）
+5. 按 `Tab` 切换查看已暂存/未暂存的变更
+6. 按 `Esc` 退出逐行视图
+
+**提交**：
+
+| 操作                       | 快捷键                     |
+| -------------------------- | -------------------------- |
+| 提交暂存的文件             | `c` -> 输入消息 -> `Enter` |
+| 修补上次提交（amend）      | `A`                        |
+| 跳过 pre-commit hook 提交  | `w`                        |
+| 使用外部编辑器编写提交消息 | `C`（大写）                |
+
+### 5.3 推送与拉取
+
+| 操作                 | 快捷键      | 对应命令    |
+| -------------------- | ----------- | ----------- |
+| 推送                 | `P`（大写） | `git push`  |
+| 拉取                 | `p`（小写） | `git pull`  |
+| 抓取（仅获取不合并） | `f`         | `git fetch` |
+
+> 注意 `P` 和 `p` 的大小写区别！推送用大写，拉取用小写。
+
+如果当前分支没有设置上游分支，Lazygit 会弹出窗口让你选择远程仓库和分支名称。
+
+### 5.4 撤销与重做
+
+这是 Lazygit 最贴心的功能之一——**全局撤销**：
+
+| 操作 | 快捷键 | 说明                            |
+| ---- | ------ | ------------------------------- |
+| 撤销 | `z`    | 基于 reflog 撤销上一个 Git 操作 |
+| 重做 | `Z`    | 重做上一个被撤销的操作          |
+
+Lazygit 利用 `git reflog` 实现撤销，可以回退大部分 Git 操作（提交、变基、合并等）。但请注意：**工作区和贮藏的变更不在撤销范围内**。
+
+对应到命令行中各阶段的撤销：
+
+| 场景           | 命令行                   | Lazygit                     |
+| -------------- | ------------------------ | --------------------------- |
+| 丢弃工作区修改 | `git checkout -- <file>` | Files 面板按 `d`            |
+| 撤销暂存       | `git reset HEAD <file>`  | `space` 取消暂存            |
+| 撤销本地提交   | `git reset --hard <id>`  | Commits 面板按 `g` 选 reset |
+| 撤销已推送提交 | `git revert <id>`        | Commits 面板按 `t`          |
+
+## 6 分支管理
+
+按 `3` 或用 `h`/`l` 切换到 Branches 面板。该面板有三个子标签，用 `[` / `]` 切换：
+
+- **Local Branches**：本地分支
+- **Remotes**：远程仓库及其分支
+- **Tags**：标签管理
+
+### 6.1 创建与切换分支
+
+| 操作                     | 快捷键  | 对应命令                                             |
+| ------------------------ | ------- | ---------------------------------------------------- |
+| 检出分支                 | `space` | `git checkout <branch>`                              |
+| 创建新分支               | `n`     | `git checkout -b <name>`                             |
+| 按名称检出               | `c`     | `git checkout <name>`（支持输入 `-` 切换上一个分支） |
+| 切换上一个分支           | `-`     | `git checkout -`                                     |
+| 强制检出（丢弃本地修改） | `F`     | `git checkout -f <branch>`                           |
+| 重命名分支               | `R`     | `git branch -m <new-name>`                           |
+
+### 6.2 合并与变基
+
+| 操作                   | 快捷键 | 说明                               |
+| ---------------------- | ------ | ---------------------------------- |
+| 合并到当前分支         | `M`    | 弹出菜单选择正常合并或 squash 合并 |
+| 变基当前分支到所选分支 | `r`    | `git rebase <selected-branch>`     |
+| 快进当前分支           | `f`    | `git merge --ff-only`              |
+
+**合并 vs 变基**：
+
+- **合并**（`M`）：保留完整的分支历史，创建合并提交
+- **变基**（`r`）：将当前分支的提交"移动"到目标分支之上，产生线性历史
+
+### 6.3 删除分支
+
+选中要删除的分支，按 `d`，Lazygit 会弹出菜单让你选择：
+
+- 仅删除本地分支（对应 `git branch -d`）
+- 仅删除远程分支（对应 `git push origin --delete`）
+- 同时删除本地和远程分支
+
+如果分支有未合并的提交，Lazygit 会提示你确认是否强制删除。
+
+### 6.4 远程分支
+
+按 `]` 切换到 Remotes 子标签：
+
+| 操作             | 快捷键  | 说明                     |
+| ---------------- | ------- | ------------------------ |
+| 查看远程分支列表 | `Enter` | 进入远程仓库查看分支     |
+| 检出远程分支     | `space` | 自动创建本地追踪分支     |
+| 设置上游分支     | `u`     | 在 Local Branches 中使用 |
+| 添加远程仓库     | `n`     | 在 Remotes 标签按 `n`    |
+| 删除远程仓库     | `d`     | 仅删除本地配置           |
+| 编辑远程仓库 URL | `e`     | 修改 remote URL          |
+| 抓取远程仓库     | `f`     | `git fetch <remote>`     |
+
+## 7 交互式变基
+
+交互式变基是 Git 中最强大也最令人畏惧的功能之一。在命令行中，你需要面对 `git rebase -i` 打开的编辑器和一堆 pick/squash/fixup 指令。而在 Lazygit 中，一切都变成了直观的快捷键操作。
+
+![交互式变基流程](/static/images/blog/lazygit-guide/rebase-flow.png)
+
+### 7.1 基本操作
+
+在 Commits 面板（按 `4`），你可以直接对提交执行变基操作：
+
+| 按键     | 操作   | 说明                                     |
+| -------- | ------ | ---------------------------------------- |
+| `s`      | squash | 将选中提交压缩到其下方的提交中，消息合并 |
+| `f`      | fixup  | 同 squash，但丢弃选中提交的消息          |
+| `d`      | drop   | 删除选中的提交                           |
+| `e`      | edit   | 在此提交处暂停变基，允许修改             |
+| `p`      | pick   | 保留提交（默认状态）                     |
+| `r`      | reword | 修改提交消息                             |
+| `ctrl+j` | 下移   | 将提交在历史中下移                       |
+| `ctrl+k` | 上移   | 将提交在历史中上移                       |
+
+> 这些操作会自动启动交互式变基。Lazygit 在后台处理所有复杂性，你只需专注于想做什么。
+
+### 7.2 高级用法
+
+| 操作                | 快捷键 | 说明                                     |
+| ------------------- | ------ | ---------------------------------------- |
+| 启动交互式变基      | `i`    | 对当前分支所有提交启动变基               |
+| 标记基准提交        | `B`    | 设置变基的起点（只变基部分提交）         |
+| 创建 fixup 提交     | `F`    | 创建一个 `fixup!` 前缀的提交             |
+| 自动压缩 fixup 提交 | `S`    | 自动将所有 `fixup!` 提交压缩到对应的提交 |
+| 修补旧提交          | `A`    | 将当前暂存的变更合并到选中的旧提交中     |
+
+### 7.3 实战场景
+
+**场景 1：提交消息写错了**
+
+在 Commits 面板找到那条提交，按 `r`，修改消息后 `Enter` 确认。
+
+**场景 2：多个小提交合并为一个**
+
+1. 用 `shift+下` 选中要合并的多个连续提交
+2. 按 `s`（squash）将它们压缩为一个
+3. 编辑合并后的提交消息
+
+**场景 3：删除中间某个不需要的提交**
+
+在 Commits 面板找到那条提交，按 `d`（drop）。如果后续提交依赖了该提交的修改，可能需要解决冲突。
+
+**场景 4：调整提交顺序**
+
+选中要移动的提交，用 `ctrl+k`（上移）或 `ctrl+j`（下移）调整位置。
+
+## 8 高级功能
+
+### 8.1 Cherry-Pick（拣选）
+
+Cherry-Pick 可以将其他分支的特定提交复制到当前分支：
+
+1. 切换到源分支，在 Commits 面板找到目标提交
+2. 按 `C`（大写）复制该提交（可复制多个）
+3. 切换回目标分支
+4. 按 `V`（大写）粘贴（Cherry-Pick）
+5. 按 `Esc` 取消选择，或按 `ctrl+r` 重置拣选列表
+
+### 8.2 Bisect（二分查找）
+
+当你知道某个 bug 是在某次提交引入的，但不确定是哪一次时，二分查找非常有用：
+
+1. 在 Commits 面板按 `b`，打开二分查找菜单
+2. 标记当前提交为 `bad`（有 bug）或 `good`（无 bug）
+3. Lazygit 自动跳转到中间的提交，让你继续标记
+4. 重复标记直到定位到引入 bug 的那次提交
+
+这比手动 `git bisect` 直观得多。
+
+### 8.3 Stash（贮藏）
+
+贮藏功能可以暂时保存未提交的修改，切换到其他工作后再恢复：
+
+**在 Files 面板创建贮藏**：
+
+| 操作             | 快捷键 |
+| ---------------- | ------ |
+| 快速贮藏所有变更 | `s`    |
+| 查看贮藏选项     | `S`    |
+
+贮藏选项包括：贮藏所有变更、仅贮藏已暂存的、仅贮藏未暂存的。
+
+**在 Stash 面板管理贮藏**（按 `5`）：
+
+| 操作             | 快捷键  |
+| ---------------- | ------- |
+| 应用贮藏（保留） | `space` |
+| 应用并删除贮藏   | `g`     |
+| 删除贮藏         | `d`     |
+| 从贮藏创建新分支 | `n`     |
+| 重命名贮藏       | `r`     |
+
+### 8.4 Worktrees（工作树）
+
+工作树允许你在同一仓库中同时检出多个分支到不同目录，无需来回切换和 stash：
+
+- 在 Branches 面板按 `w` 打开工作树选项
+- 选择创建新工作树，指定分支和路径
+- 使用 `Enter` 切换到其他工作树
+- 按 `d` 删除不再需要的工作树
+
+### 8.5 自定义补丁（Rebase Magic）
+
+这是 Lazygit 最独特的功能之一——从旧提交中提取或移除特定的代码改动：
+
+1. 在 Commits 面板选中目标提交，按 `Enter` 查看文件
+2. 选中文件，按 `Enter` 进入逐行视图
+3. 用 `space` 选择要操作的行，添加到自定义补丁
+4. 按 `ctrl+p` 打开自定义补丁选项：
+   - 从该提交中移除选中的改动
+   - 将选中的改动拆分为新提交
+   - 将补丁反向应用到暂存区
+
+### 8.6 自定义命令
+
+Lazygit 支持在配置文件中定义自定义命令，扩展其功能。
+
+在 `~/.config/lazygit/config.yml` 中添加：
+
+```yaml
+customCommands:
+  - key: '<c-p>'
+    description: '推送到所有远程仓库'
+    command: 'git remote | xargs -I {} git push {} {{.SelectedLocalBranch.Name}}'
+    context: 'localBranches'
+    loadingText: '推送中...'
+```
+
+你还可以在 Lazygit 中按 `:` 直接执行任意 Shell 命令。
+
+## 9 冲突解决
+
+无论是合并、变基还是 Cherry-Pick，都可能遇到冲突。Lazygit 提供了直观的冲突解决界面。
+
+![冲突解决](/static/images/blog/lazygit-guide/conflict-resolution.png)
+
+### 9.1 冲突触发场景
+
+- **合并冲突**：`M` 合并分支时，两个分支修改了同一处代码
+- **变基冲突**：`r` 变基时，被移动的提交与目标分支冲突
+- **Cherry-Pick 冲突**：拣选的提交与当前分支的代码冲突
+
+### 9.2 在 Lazygit 中解决冲突
+
+冲突发生时，Files 面板会显示带有冲突标记的文件。选中冲突文件后：
+
+1. 按 `Enter` 进入冲突解决视图
+2. 界面会高亮显示冲突的两个版本（ours 和 theirs）
+3. 使用以下快捷键操作：
+
+| 操作                   | 快捷键    |
+| ---------------------- | --------- |
+| 选择当前区块           | `space`   |
+| 选择所有区块           | `b`       |
+| 在同一冲突的区块间移动 | `↑` / `↓` |
+| 在不同冲突间移动       | `←` / `→` |
+| 撤销冲突解决           | `z`       |
+| 在外部编辑器中编辑     | `e`       |
+| 查看更多合并选项       | `M`       |
+
+### 9.3 解决后继续
+
+所有冲突解决完毕后：
+
+1. 冲突文件会自动变为已暂存状态
+2. 按 `m` 打开合并/变基选项菜单
+3. 选择「继续」（continue）完成操作
+
+如果决定放弃本次合并/变基，同样按 `m`，选择「中止」（abort）。
+
+## 10 LazyVim 集成
+
+如果你使用 [LazyVim](/blog/lazyvim-guide) 作为编辑器，Lazygit 已经内置集成，开箱即用。
+
+### 10.1 快速启动
+
+在 LazyVim 中按 `<leader>gg`，即可在浮动窗口中打开 Lazygit。这由 [lazygit.nvim](https://github.com/kdheepak/lazygit.nvim) 插件提供，LazyVim 默认已包含。
+
+工作流程：
+
+1. 在 LazyVim 中编写代码
+2. 按 `<leader>gg` 打开 Lazygit
+3. 暂存、提交、推送
+4. 按 `q` 关闭 Lazygit，回到编辑器
+
+整个过程不需要切换终端窗口，保持编码的心流状态。
+
+### 10.2 配置编辑器联动
+
+当你在 Lazygit 中按 `e` 编辑文件时，它会调用外部编辑器。在 LazyVim 环境中，这通常已自动配置为 Neovim。
+
+如果需要手动配置：
+
+```yaml
+# ~/.config/lazygit/config.yml
+os:
+  editCommand: nvim
+  editCommandTemplate: '{{editor}} {{filename}}'
+```
+
+### 10.3 其他 LazyVim Git 快捷键
+
+除了 `<leader>gg`，LazyVim 还提供：
+
+| 快捷键       | 功能             |
+| ------------ | ---------------- |
+| `<leader>gg` | 打开 Lazygit     |
+| `<leader>gf` | Lazygit 文件日志 |
+| `<leader>gl` | Lazygit 日志     |
+| `<leader>gb` | Git Blame        |
+
+## 11 Git 进阶技巧
+
+### 11.1 Tag 管理
+
+在 Branches 面板按 `]` 切换到 Tags 子标签：
+
+| 操作     | 快捷键  | 对应命令                          |
+| -------- | ------- | --------------------------------- |
+| 创建标签 | `n`     | `git tag <name>`                  |
+| 删除标签 | `d`     | 弹出菜单选择删除本地/远程         |
+| 推送标签 | `P`     | `git push origin <tag>`           |
+| 检出标签 | `space` | `git checkout <tag>`（分离 HEAD） |
+
+在 Commits 面板中也可以为特定提交创建标签：选中提交后按 `T`。
+
+常用命令行标签操作对照：
+
+```bash
+git tag                              # 查看所有标签
+git tag -l 'v1.0*'                   # 查看匹配的标签
+git show v1.0.0                      # 查看标签详情
+git tag v1.0.1                       # 在当前提交创建标签
+git tag -d v1.0.1                    # 删除本地标签
+git push origin v1.0.1               # 推送指定标签
+git push origin --tags               # 推送所有标签
+git push origin :refs/tags/v1.0.1    # 删除远程标签
+```
+
+### 11.2 多平台 SSH 配置
+
+如果你同时使用 GitHub、GitLab 和 Gitee，需要为每个平台配置独立的 SSH 密钥。
+
+**1. 为每个平台生成独立密钥**：
+
+```bash
+ssh-keygen -t rsa -C "your@email.com" -f ~/.ssh/id_rsa_github
+ssh-keygen -t rsa -C "your@email.com" -f ~/.ssh/id_rsa_gitlab
+ssh-keygen -t rsa -C "your@email.com" -f ~/.ssh/id_rsa_gitee
+```
+
+**2. 配置 `~/.ssh/config`**：
+
+```
+# GitHub
+Host github.com
+    HostName github.com
+    User git
+    Port 22
+    PreferredAuthentications publickey
+    IdentityFile ~/.ssh/id_rsa_github
+
+# GitLab
+Host gitlab.com
+    HostName gitlab.com
+    User git
+    Port 22
+    PreferredAuthentications publickey
+    IdentityFile ~/.ssh/id_rsa_gitlab
+
+# Gitee
+Host gitee.com
+    HostName gitee.com
+    User git
+    Port 22
+    PreferredAuthentications publickey
+    IdentityFile ~/.ssh/id_rsa_gitee
+```
+
+**3. 将各公钥分别添加到对应平台**。
+
+**4. 验证连接**：
+
+```bash
+ssh -T git@github.com
+ssh -T git@gitlab.com
+ssh -T git@gitee.com
+```
+
+**5. 针对不同仓库设置不同的 Git 身份**：
+
+```bash
+# 全局配置（默认身份）
+git config --global user.name "your-name"
+git config --global user.email "your@email.com"
+
+# 特定仓库使用不同身份
+cd ~/your-repo
+git config --local user.name "other-name"
+git config --local user.email "other@email.com"
+```
+
+### 11.3 双远程推送
+
+如果你希望代码同时推送到 GitHub 和 Gitee（或其他平台），有两种方式。
+
+**方法一：多 remote 分别推送**
+
+```bash
+# 添加第二个远程仓库
+git remote add gitee git@gitee.com:username/repo.git
+
+# 分别推送
+git push origin main
+git push gitee main
+```
+
+在 Lazygit 中，切换到 Remotes 标签，按 `n` 添加新的远程仓库，然后可以分别对不同的远程进行 fetch 和 push。
+
+**方法二：单 remote 一次推送**
+
+```bash
+# 为 origin 添加第二个推送地址
+git remote set-url --add origin git@gitee.com:username/repo.git
+
+# 一次推送到所有地址
+git push origin main
+```
+
+这样执行一次 `git push`（或在 Lazygit 中按 `P`）就会同时推送到两个平台。
+
+## 12 常见问题
+
+| 问题                             | 原因                     | 解决方案                                                 |
+| -------------------------------- | ------------------------ | -------------------------------------------------------- |
+| SSH 已配置但 push 仍需密码       | remote URL 使用了 HTTPS  | `git remote set-url origin git@github.com:user/repo.git` |
+| `ssh -T git@github.com` 连接被拒 | 22 端口被防火墙/代理阻断 | 在 `~/.ssh/config` 中改用 443 端口（见下方）             |
+| 提交时报「未合并文件」错误       | 存在未解决的冲突文件     | 解决冲突后 `git add`，或 `git rm` 移除                   |
+| `reset --hard` 后想恢复代码      | 误操作回退了提交         | `git reflog` 查看历史，`git reset --hard HEAD@{n}` 恢复  |
+| 子目录在 GitHub 显示白色箭头     | 嵌套了 `.git` 仓库       | 删除子目录的 `.git`，`git rm --cached <dir>` 后重新添加  |
+| Lazygit 在大仓库中启动慢         | 自动 fetch 耗时          | 配置 `git.autoFetch: false`                              |
+| Lazygit 中文显示乱码             | 终端 locale 不正确       | 确保 `LC_ALL=en_US.UTF-8` 或 `zh_CN.UTF-8`               |
+
+**SSH 443 端口配置**（解决 22 端口被阻断）：
+
+```
+# ~/.ssh/config
+Host github.com
+    HostName ssh.github.com
+    User git
+    Port 443
+```
+
+**`reset --hard` 后恢复代码**：
+
+如果已经 commit 过，可以用 reflog 恢复：
+
+```bash
+git reflog                      # 查看所有操作记录
+git reset --hard HEAD@{2}       # 恢复到指定节点
+```
+
+如果已 `git add` 但未 commit：
+
+```bash
+git fsck --lost-found           # 找回暂存过的文件
+# 恢复的文件在 .git/lost-found/other/ 目录下
+```
+
+如果既没 add 也没 commit——那只能依靠编辑器的本地历史（如 LazyVim 的 undo 历史）或磁盘恢复工具了。
+
+## 13 快速参考
+
+### 13.1 全局快捷键
+
+| 按键      | 作用                 |
+| --------- | -------------------- |
+| `P`       | 推送                 |
+| `p`       | 拉取                 |
+| `z` / `Z` | 撤销 / 重做          |
+| `?`       | 帮助菜单             |
+| `R`       | 刷新 Git 状态        |
+| `:`       | 执行 Shell 命令      |
+| `+` / `_` | 切换屏幕模式         |
+| `W`       | Diff 对比菜单        |
+| `m`       | 合并/变基选项        |
+| `q`       | 退出                 |
+| `1-5`     | 切换面板             |
+| `/`       | 搜索/过滤            |
+| `@`       | 命令日志             |
+| `{` / `}` | 调整 diff 上下文范围 |
+
+### 13.2 Files 面板
+
+| 按键      | 作用              |
+| --------- | ----------------- |
+| `space`   | 暂存/取消暂存     |
+| `a`       | 全部暂存/取消     |
+| `c`       | 提交              |
+| `A`       | 修补上次提交      |
+| `Enter`   | 进入逐行视图      |
+| `d`       | 放弃变更          |
+| `s` / `S` | 贮藏 / 贮藏选项   |
+| `e`       | 在编辑器中打开    |
+| `i`       | 添加到 .gitignore |
+| `D`       | 重置工作树        |
+| `M`       | 合并冲突选项      |
+| `f`       | 抓取远程          |
+
+### 13.3 Commits 面板
+
+| 按键                | 作用                    |
+| ------------------- | ----------------------- |
+| `s`                 | squash（压缩）          |
+| `f`                 | fixup（修正）           |
+| `d`                 | drop（删除）            |
+| `e`                 | edit（编辑）            |
+| `r`                 | reword（改写消息）      |
+| `i`                 | 开始交互式变基          |
+| `ctrl+j` / `ctrl+k` | 上下移动提交            |
+| `C`                 | 复制提交（拣选）        |
+| `V`                 | 粘贴提交（Cherry-Pick） |
+| `A`                 | 修补旧提交              |
+| `b`                 | 二分查找                |
+| `B`                 | 标记基准提交            |
+| `T`                 | 创建标签                |
+| `t`                 | 撤销提交（revert）      |
+| `g`                 | 重置选项                |
+| `y`                 | 复制提交属性            |
+
+### 13.4 Branches 面板
+
+| 按键    | 作用           |
+| ------- | -------------- |
+| `space` | 检出           |
+| `n`     | 新建分支       |
+| `d`     | 删除           |
+| `M`     | 合并到当前分支 |
+| `r`     | 变基           |
+| `f`     | 快进           |
+| `R`     | 重命名         |
+| `u`     | 上游设置       |
+| `-`     | 切换上一个分支 |
+| `w`     | 工作树选项     |
+
+### 13.5 Stash 面板
+
+| 按键    | 作用           |
+| ------- | -------------- |
+| `space` | 应用贮藏       |
+| `g`     | 应用并删除     |
+| `d`     | 删除           |
+| `n`     | 从贮藏创建分支 |
+| `r`     | 重命名         |
+
+### 13.6 冲突解决
+
+| 按键      | 作用           |
+| --------- | -------------- |
+| `space`   | 选择区块       |
+| `b`       | 选择所有区块   |
+| `↑` / `↓` | 区块间移动     |
+| `←` / `→` | 冲突间移动     |
+| `z`       | 撤销解决       |
+| `e`       | 在编辑器中打开 |
+| `M`       | 更多合并选项   |
+
+## 14 参考链接
+
+- [Lazygit GitHub 仓库](https://github.com/jesseduffield/lazygit)
+- [Lazygit 中文按键绑定](https://github.com/jesseduffield/lazygit/blob/master/docs/keybindings/Keybindings_zh-CN.md)
+- [Lazygit 自定义命令文档](https://github.com/jesseduffield/lazygit/blob/master/docs/Custom_Command_Keybindings.md)
+- [lazygit.nvim（LazyVim 集成插件）](https://github.com/kdheepak/lazygit.nvim)
+- [LazyVim 完全指南](/blog/lazyvim-guide)（本站）
