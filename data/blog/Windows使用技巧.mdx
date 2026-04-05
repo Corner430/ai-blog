@@ -5,127 +5,125 @@ lastmod: '2024-03-31'
 tags: ['Windows']
 draft: false
 images: ['/static/images/blog/covers/cover-windows.png']
-summary: 'Windows实用技巧合集：截图快捷键、文件夹共享设置、系统字体修改、精简系统推荐等常用操作指南。'
+summary: '一份实用的 Windows 技巧合集，涵盖截图快捷键、局域网文件夹共享、系统字体替换以及精简系统推荐。'
 ---
 
-## 1. 截图快捷键
+![题图](/static/images/blog/Windows使用技巧/hero.png)
 
-Windows 自带截图工具非常实用，无需安装第三方软件：
+## 1 截图快捷键
 
-- **普通截图**：`Win + Shift + S` — 调出截图工具栏，可选择矩形截图、自由截图、窗口截图或全屏截图
-- **长截图（滚动截图）**：`Ctrl + Shift + S` — 在部分应用（如 Edge 浏览器）中可进行滚动截图，截取整个网页
+Windows 内置的截图工具已经足够强大，无需安装第三方软件。
 
-> 截图后会自动复制到剪贴板，可直接 `Ctrl + V` 粘贴到聊天窗口、文档等。点击右下角通知可以进入截图编辑器进行标注。
+| 快捷键             | 功能                                               |
+| ------------------ | -------------------------------------------------- |
+| `Win + Shift + S`  | 调出截图工具栏，支持矩形、自由、窗口和全屏四种模式 |
+| `Ctrl + Shift + S` | 滚动截图（部分应用支持，如 Edge 浏览器）           |
+| `Win + PrtScn`     | 全屏截图并自动保存到「图片/屏幕截图」文件夹        |
+| `Alt + PrtScn`     | 截取当前活动窗口                                   |
 
-## 2. 文件夹共享设置
+> 截图完成后内容会自动复制到剪贴板，可以直接 `Ctrl + V` 粘贴。点击右下角弹出的通知可以进入截图编辑器进行标注。
 
-通过 Windows 内置的文件共享功能，可以在局域网内的多台电脑之间方便地共享文件夹。
+## 2 局域网文件夹共享
+
+通过 Windows 内置的文件共享功能，可以在局域网内的多台电脑之间互传文件，无需 U 盘或第三方工具。
 
 ### 2.1 将网络设置为专用网络
 
-共享功能需要在专用网络下才能使用。打开「设置」→「网络和 Internet」→ 点击当前连接的网络 → 将网络配置文件设为「专用」。
+共享功能仅在专用网络下可用。操作路径：**设置** → **网络和 Internet** → 点击当前连接的网络 → 将网络配置文件类型设为 **专用**。
 
-![20230516175315](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175315.png)
+![设置专用网络](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175315.png)
 
-### 2.2 启用网络发现
+### 2.2 启用网络发现与文件共享
 
-打开「控制面板」→「网络和共享中心」→「更改高级共享设置」，启用以下选项：
+打开 **控制面板** → **网络和共享中心** → **更改高级共享设置**，确保以下选项已启用：
 
-- ✅ 启用网络发现
-- ✅ 启用文件和打印机共享
+- 启用网络发现
+- 启用文件和打印机共享
 
 ![启用网络发现](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/%E5%90%AF%E7%94%A8%E7%BD%91%E7%BB%9C%E5%8F%91%E7%8E%B0.png)
 
-### 2.3 设置共享文件夹
+### 2.3 配置共享文件夹
 
-找到要共享的文件夹，右键 →「属性」→「共享」选项卡 → 点击「高级共享」。
+右键目标文件夹 → **属性** → **共享** 选项卡 → **高级共享**。
 
-![20230516175448](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175448.png)
+![共享属性](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175448.png)
 
-勾选「共享此文件夹」，然后点击「权限」按钮设置访问权限（读取/完全控制）。
+勾选 **共享此文件夹**，点击 **权限** 设置访问级别（只读或完全控制）。
 
-![分享文件夹](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/%E5%88%86%E4%BA%AB%E6%96%87%E4%BB%B6%E5%A4%B9.png)
+![共享文件夹设置](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/%E5%88%86%E4%BA%AB%E6%96%87%E4%BB%B6%E5%A4%B9.png)
 
-![20230516175613](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175613.png)
+![权限配置](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175613.png)
 
-### 2.4 网络映射
+### 2.4 在另一台电脑上映射网络驱动器
 
-在其他电脑上，打开「此电脑」→「映射网络驱动器」，输入共享路径（如 `\\192.168.1.100\共享文件夹`）进行映射。
+打开 **此电脑** → **映射网络驱动器**，输入共享路径（格式：`\\IP地址\共享文件夹名`）。
 
-![网络映射](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516174919.png)
+![映射网络驱动器](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516174919.png)
 
-输入共享电脑的账号和密码，即可完成映射：
+输入共享电脑的用户名和密码完成认证：
 
-![20230516175105](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175105.png)
+![输入凭据](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230516175105.png)
 
-## 3. 系统字体修改
+映射成功后，共享文件夹会像本地磁盘一样出现在「此电脑」中。
 
-通过修改注册表可以替换 Windows 系统的默认字体（微软雅黑）。
+## 3 系统字体替换
+
+如果你不满意 Windows 默认的微软雅黑字体，可以通过修改注册表来替换系统字体。
 
 ### 3.1 操作步骤
 
-1. 以管理员身份运行 `regedit`，打开注册表编辑器
-
-2. 导航到以下路径：
+1. 以管理员身份运行 `regedit` 打开注册表编辑器
+2. 导航到：
 
    ```
    HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts
    ```
 
-3. 先找到你满意的字体条目，右键 →「修改」→ 复制其值数据（即字体文件名）
-
+3. 找到你想使用的字体条目，右键 → **修改** → 复制其值数据（即字体文件名）
 4. 找到 `Microsoft YaHei & Microsoft YaHei UI (TrueType)` 条目
+5. 将值数据从 `msyh.ttc` 修改为你选择的字体文件名
+6. 重启系统使更改生效
 
-5. 将其值数据从 `msyh.ttc` 修改为你想要的字体文件名
-
-   > **注意**：只修改「值数据」，不要修改「值名称」
-
-6. 退出注册表编辑器，**重启系统**使更改生效
+> **注意**：只修改「值数据」，不要修改「值名称」。建议操作前先导出注册表备份。如需恢复，将值数据改回 `msyh.ttc` 即可。
 
 ### 3.2 推荐字体
 
-- **arial.ttf**（Arial）— 经典无衬线字体，清晰易读，适合替代微软雅黑
-- 也可以使用其他已安装的字体文件，如 `consola.ttf`（Consolas）等
+- **Arial**（`arial.ttf`）— 经典无衬线字体，清晰易读
+- **Consolas**（`consola.ttf`）— 等宽字体，适合代码场景
 
-> 修改系统字体有一定风险，建议提前备份注册表。如需恢复，将值数据改回 `msyh.ttc` 即可。
+## 4 精简系统推荐
 
-## 4. 精简系统推荐
-
-如果你需要一个更轻量、更快速的 Windows 系统，可以考虑以下精简版系统。
+官方 Windows 预装了大量用不到的应用和服务。如果你追求更轻量的系统体验，以下是几个值得关注的精简方案。
 
 ### 4.1 Tiny10 / Tiny11
 
-[Tiny10](https://archive.org/details/tiny-10-NTDEV) 和 [Tiny11](https://archive.org/details/tiny-11-NTDEV) 是由 NTDEV 制作的精简版 Windows 系统，去除了大量不必要的组件和预装应用。
+[Tiny10](https://archive.org/details/tiny-10-NTDEV) 和 [Tiny11](https://archive.org/details/tiny-11-NTDEV) 是 NTDEV 制作的精简版 Windows，去除了大量不必要的组件。
 
-**Tiny11 特点：**
+**Tiny11 亮点：**
 
 - 安装后仅占用约 **8GB** 磁盘空间
-- 在仅 **2GB RAM** 的系统上也能正常运行
+- **2GB RAM** 即可运行
 - 去除了 Edge、OneDrive、Teams 等预装应用
-
-**Tiny11 版本说明：**
-
-Tiny11 有 Beta1、Beta2、Beta2(no sysreq)、R1 等多个版本，都基于 Windows 11。其中 Beta2 版本的口碑优于 Beta1，`no sysreq` 变体取消了 TPM 等系统要求限制。
+- Beta2 版本口碑较好，`no sysreq` 变体取消了 TPM 等硬件限制
 
 **注意事项：**
 
-- Tiny10 默认不包含中文语言包。需要先启动 **Windows Update** 相关服务，然后通过「设置」→「时间和语言」→「语言和区域」下载中文语言包
-- 可以使用 [tiny11builder](https://github.com/ntdevlabs/tiny11builder) 自行构建定制的精简系统
+- Tiny10 默认不含中文语言包，需先启用 Windows Update 服务，再通过「设置 → 时间和语言 → 语言和区域」下载
+- 可使用 [tiny11builder](https://github.com/ntdevlabs/tiny11builder) 自行构建定制版本
 
 ### 4.2 AtlasOS
 
-[AtlasOS](https://atlasos.net/) 是一个专为游戏优化的 Windows 10 精简方案。它不是独立的系统镜像，而是在现有 Windows 安装上运行的优化脚本。
+[AtlasOS](https://atlasos.net/) 是一个专为游戏优化的开源方案（[GitHub](https://github.com/Atlas-OS/Atlas)），它不是独立的系统镜像，而是在现有 Windows 安装上运行的优化脚本。
 
-- 开源项目：[GitHub](https://github.com/Atlas-OS/Atlas)
-- [安装教程](https://docs.atlasos.net/getting-started/installation/#download-an-iso)
-- 大幅减少后台进程，降低输入延迟，提升游戏帧率
+- 大幅减少后台进程，降低输入延迟
+- 详细的[安装教程](https://docs.atlasos.net/getting-started/installation/#download-an-iso)
 
 ### 4.3 ReviOS
 
-[ReviOS](https://revi.cc/) 是类似 AtlasOS 的游戏优化精简系统，同时提供 Windows 10 和 Windows 11 版本。特点是在性能优化的同时兼顾系统稳定性，类似于官方的 LTSC 版本但更加轻量。
+[ReviOS](https://revi.cc/) 兼顾性能优化和系统稳定性，同时提供 Windows 10 和 11 版本，定位类似官方 LTSC 但更轻量。
 
 ### 4.4 Windsys Project
 
-[Windsys Project](https://windsys.win/) 提供多种定制的 Windows 系统镜像，适合有特定需求的用户。
+[Windsys Project](https://windsys.win/) 提供多种定制 Windows 镜像，适合有特定需求的用户。
 
-> **提醒**：使用非官方精简系统存在一定安全风险，且可能无法通过 Windows Update 正常更新。建议仅在非关键设备上使用，并注意从官方渠道下载。
+> **安全提醒**：非官方精简系统存在一定安全风险，且可能无法通过 Windows Update 正常更新。建议仅在非关键设备上使用，务必从官方渠道下载。

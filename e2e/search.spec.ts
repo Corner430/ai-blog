@@ -37,7 +37,7 @@ test.describe('Search', () => {
 
   test('should show AI search results and navigate on click', async ({ page }) => {
     await mockJsonResponse(page, '**/api/ai/search', {
-      results: [{ slug: 'hello-world', title: 'Hello World', summary: 'First post', score: 1 }],
+      results: [{ slug: 'hello-world', title: '你好，世界', summary: '博客开篇文章', score: 1 }],
     })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await page.getByRole('button', { name: '搜索' }).click()
@@ -45,9 +45,9 @@ test.describe('Search', () => {
     await expect(modal).toBeVisible({ timeout: 10000 })
     await modal.locator('input').fill('hello')
     // Wait for results
-    await expect(modal.getByText('Hello World')).toBeVisible({ timeout: 10000 })
+    await expect(modal.getByText('你好，世界')).toBeVisible({ timeout: 10000 })
     // Click the result
-    await modal.getByText('Hello World').click()
+    await modal.getByText('你好，世界').click()
     await expect(page).toHaveURL(/\/blog\/hello-world/)
   })
 

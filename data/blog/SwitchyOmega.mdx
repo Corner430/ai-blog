@@ -1,22 +1,49 @@
 ---
-title: 'SwitchyOmega'
+title: 'SwitchyOmega 代理管理配置指南'
 date: '2024-05-24'
-tags: ['科学上网']
+tags: ['网络']
 draft: false
 images: ['/static/images/blog/covers/cover-proxy.png']
-summary: '文章介绍配置代理的步骤：先新建名为“proxy”的Proxy Profile并测试网站重定向至指定端口；再新建“AutoProxy”的Switch Profile，配置引用gfwlist.txt链接，测试时可能需等待几分钟生效。'
+summary: '介绍浏览器代理管理扩展 SwitchyOmega 的配置方法，通过 Proxy Profile 和 Switch Profile 实现智能分流。'
 ---
 
-1.  首先删除所有的情景模型，新建Proxy Profile，起名`proxy`，如图所示。
+![题图](/static/images/blog/SwitchyOmega/hero.png)
 
-![20240524140148](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240524140148.png)
+[SwitchyOmega](https://github.com/nicktogo/SwitchyOmega) 是一款浏览器代理管理扩展，支持 Chrome 和 Firefox。它可以根据规则列表自动切换代理，实现国内直连、国外走代理的智能分流。
 
-> 选中当前的`proxy`情景模式进行测试，查看是否可用，此时应该是所有的网站都会重定向到指定端口。
+## 1 创建 Proxy Profile
 
-2.  新建Switch Profile，起名`AutoProxy`，配置如图所示。
+首先删除所有已有的情景模式，然后新建一个 **Proxy Profile**，命名为 `proxy`：
 
-![20240524140241](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240524140241.png)
+![创建 Proxy Profile](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240524140148.png)
 
-[https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt)
+配置完成后，选中 `proxy` 情景模式进行测试。此时所有网站请求都会经过代理端口转发，验证代理是否正常工作。
 
-> 进行测试，可能需要等待几分钟才好用。
+## 2 创建 Switch Profile（自动切换）
+
+新建一个 **Switch Profile**，命名为 `AutoProxy`，配置如下：
+
+![配置 AutoProxy](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20240524140241.png)
+
+在规则列表设置中，添加 GFWList 规则列表地址：
+
+```
+https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt
+```
+
+**配置要点：**
+
+- **规则列表格式**：选择 `AutoProxy`
+- **规则列表匹配时**：使用 `proxy` 情景模式
+- **默认情景模式**：选择「直接连接」
+
+配置完成后点击「应用选项」，然后更新规则列表。首次加载可能需要等待几分钟才能生效。
+
+## 3 日常使用
+
+切换到 `AutoProxy` 模式后，SwitchyOmega 会自动根据 GFWList 判断：
+
+- 命中规则的网站走代理
+- 其他网站直连
+
+如果遇到某个网站无法访问但不在规则列表中，可以手动添加自定义规则。

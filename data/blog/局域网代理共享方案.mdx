@@ -2,17 +2,17 @@
 title: '局域网代理共享方案'
 date: '2023-05-25'
 lastmod: '2024-03-31'
-tags: ['路由器', '科学上网']
+tags: ['网络']
 draft: false
 images: ['/static/images/blog/covers/cover-network.png']
-summary: '局域网代理共享的多种方案对比：Mac/Linux TUN模式网关、安卓手机旁路由、iKuai软路由，实现全家设备科学上网。'
+summary: '介绍多种局域网代理共享方案，包括 Mac/Linux TUN 模式网关、安卓手机旁路由和 iKuai 软路由，实现全家设备共享代理。'
 ---
 
-本文介绍多种在局域网内共享科学上网代理的方案，让家中所有设备无需单独安装代理工具即可实现翻墙。根据现有设备和需求，你可以选择最适合的方案。
+![题图](/static/images/blog/局域网代理共享方案/hero.png)
+
+局域网代理共享的核心思路是：将一台设备配置为**旁路网关**，其他设备的网关指向它，所有流量经该设备的代理工具转发后再出去。这样局域网内所有设备无需单独安装代理工具即可上网。
 
 ## 1 网络拓扑概述
-
-局域网代理共享的核心思路是：将一台设备配置为**旁路网关**，其他设备将网关指向它，所有流量经过该设备的代理工具后再转发出去。
 
 ![网络拓扑图](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230525163331.png)
 
@@ -29,7 +29,7 @@ summary: '局域网代理共享的多种方案对比：Mac/Linux TUN模式网关
 
 ## 2 Mac/Linux 作为网关（TUN 模式）
 
-利用 Mac 或 Linux 电脑上的 Clash 等代理工具的 TUN 模式，开启 IP 转发，让局域网内其他设备通过它上网。
+利用 Mac 或 Linux 上代理工具的 TUN 模式，开启 IP 转发，让局域网内其他设备通过它上网。
 
 ### 2.1 开启 IP 转发
 
@@ -45,15 +45,15 @@ sysctl -w net.ipv4.ip_forward=1
 sysctl -w net.inet.ip.forwarding=1
 ```
 
-> Mac 系统也可以直接使用 [clashX Pro](https://install.appcenter.ms/users/clashx/apps/clashx-pro/distribution_groups/public) 的增强模式实现。
+> Mac 也可以直接使用 [clashX Pro](https://install.appcenter.ms/users/clashx/apps/clashx-pro/distribution_groups/public) 的增强模式实现。
 
 ### 2.2 安装 Service Mode
 
-在 Clash 中安装 Service Mode，安装完成后 reload app：
+在 Clash 中安装 Service Mode，安装完成后重载应用：
 
 ![安装Service Mode](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230525164402.png)
 
-此时 Service Mode 旁边的地球图标应该从灰色变成绿色，表示服务已正常运行。
+安装成功后 Service Mode 旁的地球图标会从灰色变为绿色，表示服务已正常运行。
 
 ### 2.3 开启 TUN Mode
 
@@ -65,13 +65,14 @@ sysctl -w net.inet.ip.forwarding=1
 
 将局域网内其他设备的**网关**设置为本机 IP 即可。
 
-> **注意**：本机（作为网关的电脑）自身的网关不要修改，保持指向路由器。
+> **注意**：作为网关的电脑自身的网关不要修改，保持指向路由器。
 
 ### 2.5 持久化 IP 转发
 
-上述 `sysctl` 命令重启后会失效，可通过修改配置文件实现持久化：
+上面的 `sysctl` 命令重启后会失效。修改配置文件实现持久化：
 
 ```shell
+# 编辑 sysctl 配置
 sudo vim /etc/sysctl.conf
 ```
 
@@ -91,13 +92,13 @@ sudo sysctl -p
 
 ## 3 安卓手机充当旁路网关
 
-利用一台闲置的已 Root 安卓手机，通过 Termux 配置 IP 转发和路由策略，充当旁路网关。这种方案可以突破第三方 VPN 客户端的设备数量限制。
+利用闲置的已 Root 安卓手机，通过 Termux 配置 IP 转发和路由策略，充当旁路网关。
 
 ### 3.1 前置条件
 
 - 手机已 Root
-- 下载安装 [Termux](https://github.com/termux/termux-app/releases)
-- 将手机设置为**静态 IP**（在 Wi-Fi 设置中手动指定 IP）
+- 安装 [Termux](https://github.com/termux/termux-app/releases)
+- 将手机设置为**静态 IP**（在 Wi-Fi 设置中手动指定）
 
 ### 3.2 配置脚本
 
@@ -116,18 +117,18 @@ vim proxy.sh
 ```bash
 #!/system/bin/sh
 
-tun='tun0' #虚拟接口名称
-dev='wlan0' #物理接口名称，eth0、wlan0
-interval=3 #检测网络状态间隔(秒)
-pref=18000 #路由策略优先级
+tun='tun0'    # 虚拟接口名称
+dev='wlan0'   # 物理接口名称，eth0 或 wlan0
+interval=3    # 检测网络状态间隔（秒）
+pref=18000    # 路由策略优先级
 
-# 开启IP转发功能
+# 开启 IP 转发
 sysctl -w net.ipv4.ip_forward=1
 
-# 清除filter表转发链规则
+# 清除 filter 表转发链规则
 iptables -F FORWARD
 
-# 添加NAT转换，部分第三方VPN需要此设置否则无法上网，若要关闭请注释掉
+# 添加 NAT 转换（部分第三方 VPN 需要此设置）
 iptables -t nat -A POSTROUTING -o $tun -j MASQUERADE
 
 # 添加路由策略
@@ -136,6 +137,7 @@ ip rule add from all iif $dev table $tun pref $(expr $pref - 1)
 
 contain="from all iif $dev lookup $tun"
 
+# 持续监测网络状态，自动修复路由策略
 while true ;do
     if [[ $(ip rule) != *$contain* ]]; then
             if [[ $(ip ad|grep 'state UP') != *$dev* ]]; then
@@ -160,31 +162,31 @@ nohup ./proxy.sh &
 
 将局域网内其他设备的网关设置为手机的静态 IP 地址即可。
 
-> 脚本中包含了网络状态监测循环，当网络发生变化时会自动重新设置路由策略。
+> 脚本中包含网络状态监测循环，网络变化时会自动重新设置路由策略。
 
 ---
 
 ## 4 iKuai 软路由方案
 
-iKuai（爱快）是一款国产企业级软路由系统，管理界面简洁优雅，功能丰富。
+iKuai（爱快）是一款国产企业级软路由系统，管理界面简洁，功能丰富。
 
-### 4.1 iKuai 优势
+### 4.1 优势
 
-- **网络管理便捷**：Web 界面友好，配置直观
-- **虚拟机与 Docker 支持**：可以在软路由上运行 NAS、下载机、媒体服务器等更多服务
-- **内置穿透功能**：自带内网穿透方式
-- **iKuai + lede 组合方案**：iKuai 负责主路由功能，lede（OpenWrt）装在虚拟机中负责科学上网
+- **管理便捷**：Web 界面友好，配置直观
+- **虚拟机与 Docker 支持**：可在软路由上运行 NAS、下载机、媒体服务器等
+- **内置穿透功能**：自带内网穿透
+- **iKuai + lede 组合**：iKuai 负责主路由功能，lede（OpenWrt）在虚拟机中负责代理
 
 ### 4.2 局限性
 
-> iKuai 有一个明显缺陷：**LAN-WAN 端口复用不够方便**。
+iKuai 有一个明显缺陷：**LAN-WAN 端口复用不够方便**。
 
-要使用 iKuai，需要满足以下条件之一：
+使用 iKuai 需满足以下条件之一：
 
 - 交换机具有 Web 管理界面
 - 多网口台式机（如工控机）
 
-如果你的设备只有单个网口，建议直接使用 OpenWrt。
+如果设备只有单个网口，建议直接使用 OpenWrt。
 
 ---
 

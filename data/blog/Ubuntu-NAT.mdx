@@ -1,70 +1,113 @@
 ---
-title: 'Ubuntu NAT'
+title: 'Ubuntu NAT 网关配置与镜像源设置'
 date: '2023-04-03'
-tags: ['网络', 'Ubuntu']
+tags: ['网络']
 draft: false
 images: ['/static/images/blog/covers/cover-network.png']
-summary: '文章介绍两种Ubuntu配置方法：一是将其设为网关并启用NAT，通过启用IP转发、设置默认网关、添加DNS配置等步骤，让局域网其他电脑经其上网；二是设置镜像源，含备份原文件、替换为阿里云与清华源、更新及解决vim问题，优化软件源获取。'
+summary: '介绍如何将 Ubuntu 配置为 NAT 网关让局域网其他设备共享上网，以及国内镜像源的设置方法。'
 ---
 
-### NAT
+![题图](/static/images/blog/Ubuntu-NAT/hero.png)
 
-To allow Ubuntu in the LAN to access the Internet, you need to set Ubuntu as a gateway and enable Network Address Translation (NAT).
+在实验室或办公环境中，经常遇到只有一台机器能上网的情况。本文介绍如何将这台 Ubuntu 配置为 NAT 网关，让局域网内其他设备通过它上网。
 
-- Make sure Ubuntu is connected to the Internet and can access the Internet.
+## 1 配置 NAT 网关
 
-- Enable IP forwarding:
-  `sudo sysctl net.ipv4.ip_forward=1`
+### 1.1 前提条件
 
-- On the other four Ubuntu computers, set the default gateway to the IP address of the computer that can access the Internet. You can enter the following command in Terminal to set the default gateway:
-  `sudo route add default gw <gateway_IP_address>`
-  Make sure to replace with the IP address of an Ubuntu computer with Internet access.
+确保作为网关的 Ubuntu 已经能正常联网。
 
-In recent versions of Ubuntu, the `route` command has been replaced by the `ip route` command. Therefore, you can set the default gateway to the IP address of a computer with Internet access using the following command:
-`sudo ip route add default via <gateway_IP_address>`
+### 1.2 开启 IP 转发
 
-- Add DNS resolution configuration in /etc/resolv.conf
+```bash
+sudo sysctl net.ipv4.ip_forward=1
+```
 
-  ```bash
-  nameserver 114.114.114.114
-  nameserver 8.8.8.8
-  nameserver 8.8.4.4
-  ```
+如需持久化，编辑 `/etc/sysctl.conf`，添加或取消注释：
 
-After completing these steps, your Ubuntu will be configured as a gateway with Network Address Translation (NAT) enabled. This way, other computers can connect to the internet through Ubuntu.
+```bash
+net.ipv4.ip_forward=1
+```
 
-Static ip configuration: `/etc/netplan/00-installer-config.yaml`
-The configuration takes effect: `sudo netplan apply`
+然后执行 `sudo sysctl -p` 使其生效。
+
+### 1.3 配置 iptables NAT 规则
+
+```bash
+# 假设 eth0 是连接外网的接口，根据实际情况替换
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+```
+
+### 1.4 其他设备设置默认网关
+
+在局域网内的其他 Ubuntu 机器上，将默认网关设为能上网那台机器的 IP：
+
+```bash
+# 新版本 Ubuntu 推荐使用 ip route
+sudo ip route add default via <网关IP地址>
+```
+
+> 旧版本 Ubuntu 也可以使用 `sudo route add default gw <网关IP地址>`，但 `route` 命令在新版本中已被 `ip route` 替代。
+
+### 1.5 配置 DNS
+
+在每台需要上网的设备上编辑 `/etc/resolv.conf`，添加 DNS 服务器：
+
+```bash
+nameserver 114.114.114.114
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+```
+
+### 1.6 静态 IP 配置
+
+Ubuntu 使用 Netplan 管理网络配置：
+
+- 配置文件路径：`/etc/netplan/00-installer-config.yaml`
+- 使配置生效：`sudo netplan apply`
 
 ---
 
-Set mirror source
+## 2 设置国内镜像源
 
-- Backup
-  `sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup`
+### 2.1 备份原始源
 
-- Open the **/etc/apt/sources.list** file.
+```bash
+sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
+```
 
-- Replace with the following
+### 2.2 替换为国内源
 
-  ```shell
-  deb http://mirrors.aliyun.com/ubuntu/ focal main restricted universe multiverse
-  deb http://mirrors.aliyun.com/ubuntu/ focal-security main restricted universe multiverse
-  deb http://mirrors.aliyun.com/ubuntu/ focal-updates main restricted universe multiverse
-  deb http://mirrors.aliyun.com/ubuntu/ focal-backports main restricted universe multiverse
-  deb http://mirrors.aliyun.com/ubuntu/ focal-proposed main restricted universe multiverse
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
-  ```
+编辑 `/etc/apt/sources.list`，替换为以下内容（以 Ubuntu 20.04 focal 为例）：
 
-- Update
-  `sudo apt update`
+```bash
+# 阿里云镜像
+deb http://mirrors.aliyun.com/ubuntu/ focal main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ focal-security main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ focal-updates main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ focal-backports main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ focal-proposed main restricted universe multiverse
 
-- Solve vim problems
+# 清华大学镜像
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+```
 
-  ```shell
-  sudo apt-get remove vim-common
-  sudo apt-get install vim
-  ```
+> 注意将 `focal` 替换为你实际使用的 Ubuntu 版本代号。可通过 `lsb_release -cs` 查看。
+
+### 2.3 更新软件包索引
+
+```bash
+sudo apt update
+```
+
+### 2.4 修复 Vim 问题
+
+如果系统中 Vim 不可用，可以重新安装：
+
+```bash
+sudo apt-get remove vim-common
+sudo apt-get install vim
+```

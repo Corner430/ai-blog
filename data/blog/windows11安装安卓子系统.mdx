@@ -4,46 +4,93 @@ date: '2023-05-18'
 tags: ['Windows']
 draft: false
 images: ['/static/images/blog/covers/cover-windows.png']
-summary: '本文介绍在Windows系统安装安卓子系统的步骤：先启用Hyper-v和虚拟机平台，更新Microsoft Store至美区最新版，下载安装安卓子系统；再开启开发者模式，配置adb工具，最后通过adb命令连接子系统并安装APK。'
+summary: '在 Windows 11 上安装安卓子系统（WSA）的完整教程，从启用虚拟化到通过 ADB 安装 APK。'
 ---
 
-1.  将Hyper-v和虚拟机平台打上勾
-    ![20230518115729](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518115729.png)
+![题图](/static/images/blog/windows11安装安卓子系统/hero.png)
 
-2.  Microsoft store 更新到最新版本（在美区状态下）
+Windows 11 支持通过安卓子系统（Windows Subsystem for Android，WSA）直接运行安卓应用。本文记录完整的安装配置流程。
 
-3.  下载安卓子系统的安装软件
-    [下载界面](https://store.rg-adguard.net/)
-    ![20230518120021](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518120021.png)
-    其中，提取码：9p3395vx91nr
+## 1 启用虚拟化功能
 
-下载最后一个
-![20230518120144](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518120144.png)
+安卓子系统依赖 Hyper-V 虚拟化技术。打开 **控制面板** → **程序和功能** → **启用或关闭 Windows 功能**，勾选以下两项：
 
-4.  双击打开进行安装
-    ![20230518120825](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518120825.png)
+- **Hyper-V**
+- **虚拟机平台**
 
-> 如果无法打开，需要采用如下操作
+![启用虚拟化](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518115729.png)
 
-- 以管理员身份运行powershell
-- 进入到文件所在目录
-- 运行安装命令
-  `add-Appxpackage "MicrosoftCorporationII.WindowsSubsystemForAndroid_1.7.32815.0_neutral_~_8wekyb3d8bbwe_2.Msixbundle"`
+勾选后点击确定，系统会提示重启，重启完成后继续下一步。
 
-5.  打开开发者模式
-    ![20230518121212](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518121212.png)
+## 2 更新 Microsoft Store
 
-6.  下载[adb 的命令安装包 platform-tools_r31.0.3-windows](https://www.freedidi.com/wp-content/uploads/2021/10/platform-tools_r31.0.3-windows.zip)
+确保 Microsoft Store 已更新到最新版本。如果你的账号区域不在美区，需要先将 Microsoft 账户区域切换到美国，因为 WSA 目前仅在部分地区提供。
 
-    > 解压之后，将里面的**所有文件**复制到C盘的windows文件夹下
+## 3 下载安卓子系统安装包
 
-7.  此时在终端运行以下命令
+访问 [store.rg-adguard.net](https://store.rg-adguard.net/)，这是一个可以直接下载 Microsoft Store 应用安装包的网站。
 
-    ```shell
-    adb version     # 查看版本号
-    adb connect 127.0.0.1:58526 # 连接到安卓子系统，需要查看对应的端口号
-    adb devices     # 查看当前连接设备
-    adb install .\tiktok.apk    # 安装自己下载的apk文件
-    ```
+在搜索框中输入产品 ID：**9p3395vx91nr**，选择 **Slow** 通道，点击搜索。
 
-    ![20230518122730](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518122730.png)
+![搜索安装包](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518120021.png)
+
+在结果列表中找到文件名最长的 `.Msixbundle` 文件（通常在列表最底部），点击下载。
+
+![下载安装包](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518120144.png)
+
+## 4 安装安卓子系统
+
+双击下载的 `.Msixbundle` 文件即可安装。
+
+![安装界面](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518120825.png)
+
+> **双击无法安装？** 以管理员身份打开 PowerShell，进入文件所在目录，执行以下命令：
+>
+> ```powershell
+> Add-AppxPackage "MicrosoftCorporationII.WindowsSubsystemForAndroid_1.7.32815.0_neutral_~_8wekyb3d8bbwe_2.Msixbundle"
+> ```
+
+## 5 开启开发者模式
+
+安装完成后打开安卓子系统的设置页面，启用 **开发者模式**。这是后续通过 ADB 安装应用的前提。
+
+![开启开发者模式](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518121212.png)
+
+记下设置页面中显示的 IP 地址和端口号，后面连接时会用到。
+
+## 6 配置 ADB 工具
+
+ADB（Android Debug Bridge）是安卓的调试工具，用于从命令行与安卓子系统交互。
+
+1. 下载 [ADB 工具包 platform-tools](https://www.freedidi.com/wp-content/uploads/2021/10/platform-tools_r31.0.3-windows.zip)
+2. 解压后，将文件夹内的 **所有文件** 复制到 `C:\Windows` 目录下
+
+> 也可以将解压目录添加到系统环境变量 `PATH` 中，效果相同。
+
+## 7 连接子系统并安装应用
+
+打开终端，依次执行以下命令：
+
+```shell
+# 验证 ADB 是否可用
+adb version
+
+# 连接到安卓子系统（端口号以设置页面显示的为准）
+adb connect 127.0.0.1:58526
+
+# 确认连接成功
+adb devices
+
+# 安装 APK 文件
+adb install .\your-app.apk
+```
+
+![ADB 连接与安装](https://cdn.jsdelivr.net/gh/Corner430/Picture/images/20230518122730.png)
+
+安装成功后，应用会出现在开始菜单中，像原生 Windows 应用一样启动和使用。
+
+## 常见问题
+
+- **连接失败**：确认安卓子系统已启动且开发者模式已开启，检查端口号是否正确
+- **安装 APK 报错**：部分应用依赖 Google Play 服务，WSA 默认不包含，可尝试安装 MagiskOnWSA 等方案来集成
+- **性能不佳**：在安卓子系统设置中将子系统资源分配调整为 **连续**（而非按需），可以提升运行流畅度

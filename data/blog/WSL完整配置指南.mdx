@@ -2,61 +2,45 @@
 title: 'WSL完整配置指南'
 date: '2023-04-03'
 lastmod: '2024-03-31'
-tags: ['Windows', 'WSL', 'Clash', '科学上网']
+tags: ['Windows']
 draft: false
 images: ['/static/images/blog/covers/cover-windows.png']
-summary: 'WSL完整配置指南，涵盖安装目录迁移、systemd启用、开机自启动、代理配置等实用技巧。'
+summary: 'WSL 日常使用的完整配置指南，涵盖安装目录迁移、systemd 启用、开机自启动和代理配置。'
 ---
 
-本文汇总了 WSL（Windows Subsystem for Linux）日常使用中最常见的配置需求，包括安装目录迁移、systemd 启用、开机自启动以及代理配置。
+![题图](/static/images/blog/WSL完整配置指南/hero.png)
+
+本文汇总了 WSL（Windows Subsystem for Linux）日常使用中最常见的配置需求，包括安装目录迁移、systemd 启用、开机自启动以及代理配置。每个方案都经过实际验证，可以直接使用。
 
 ## 1 安装目录迁移
 
-WSL 默认安装在 C 盘，随着使用空间会不断增长。可以将 WSL 迁移到其他磁盘。
+WSL 默认安装在 C 盘，随着使用空间会不断增长。以下步骤将 WSL 迁移到其他磁盘（以 Ubuntu-20.04 迁移到 D 盘为例）。
 
-### 1.1 迁移步骤
-
-以 Ubuntu-20.04 迁移到 D 盘为例，在 **Windows PowerShell** 中依次执行：
-
-**查看当前 WSL 发行版：**
+在 **Windows PowerShell** 中依次执行：
 
 ```shell
+# 查看当前 WSL 发行版
 wsl -l -v
-```
 
-**导出发行版为 tar 文件：**
-
-```shell
+# 导出为 tar 文件
 wsl --export Ubuntu-20.04 d:\wsl-ubuntu20.04.tar
-```
 
-**注销当前发行版：**
-
-```shell
+# 注销当前发行版
 wsl --unregister Ubuntu-20.04
-```
 
-**重新导入到 D 盘：**
-
-```shell
+# 重新导入到 D 盘
 wsl --import Ubuntu-20.04 d:\wsl-ubuntu20.04 d:\wsl-ubuntu20.04.tar --version 2
-```
 
-**设置默认登录用户：**
-
-```shell
+# 设置默认登录用户（替换 corner 为你的用户名）
 ubuntu2004 config --default-user corner
-```
 
-> 将 `corner` 替换为你安装时创建的用户名。`ubuntu2004` 是 Ubuntu 20.04 对应的命令，其他版本类似（如 `ubuntu2204`）。
-
-**删除 tar 文件（可选）：**
-
-```shell
+# 清理 tar 文件（可选）
 del d:\wsl-ubuntu20.04.tar
 ```
 
-### 1.2 注意事项
+> `ubuntu2004` 是 Ubuntu 20.04 对应的命令，其他版本类似（如 `ubuntu2204`）。
+
+**注意事项：**
 
 - 导出导入过程中 WSL 实例会停止，确保没有正在运行的重要任务
 - 导入后原有的文件、配置、已安装的软件都会保留
@@ -66,11 +50,9 @@ del d:\wsl-ubuntu20.04.tar
 
 ## 2 启用 systemd
 
-WSL 现在已经原生支持 systemd，启用后可以正常使用 `systemctl` 管理服务。
+WSL 已原生支持 systemd，启用后可以正常使用 `systemctl` 管理服务。
 
-### 2.1 配置方法
-
-编辑 `/etc/wsl.conf`（需要 sudo 权限）：
+编辑 `/etc/wsl.conf`：
 
 ```shell
 sudo vim /etc/wsl.conf
@@ -78,16 +60,14 @@ sudo vim /etc/wsl.conf
 
 添加以下内容：
 
-```shell
+```ini
 [boot]
 systemd=true
 ```
 
-保存后重启 WSL（在 PowerShell 中执行 `wsl --shutdown`，然后重新打开 WSL）。
+保存后在 PowerShell 中执行 `wsl --shutdown` 关闭 WSL，再重新打开即可生效。
 
-### 2.2 注意事项
-
-> **注意端口冲突**：启用 systemd 后，部分系统服务会自动启动并监听端口（如 `systemd-resolved` 监听 53 端口），可能与 Windows 上的服务产生冲突。如果遇到端口占用问题，可以针对性地禁用相关服务。
+> **端口冲突提醒**：启用 systemd 后，部分系统服务会自动启动并监听端口（如 `systemd-resolved` 监听 53 端口），可能与 Windows 上的服务冲突。遇到端口占用问题时，可通过 `systemctl disable <service>` 禁用相关服务。
 
 参考：[Systemd support is now available in WSL!](https://devblogs.microsoft.com/commandline/systemd-support-is-now-available-in-wsl/)
 
@@ -95,49 +75,48 @@ systemd=true
 
 ## 3 开机自启动与后台运行
 
-默认情况下 WSL 需要手动启动，通过 VBS 脚本可以实现开机自动启动并在后台运行。
+默认情况下 WSL 需要手动启动。通过 VBS 脚本可以实现开机自动启动并在后台静默运行。
 
-### 3.1 创建 VBS 启动脚本
+### 3.1 创建启动脚本
 
-创建一个名为 `wsl.vbs` 的文件，内容如下：
+创建 `wsl.vbs` 文件，内容如下：
 
-```shell
+```vbs
 ws = CreateObject("Wscript.Shell").run "wsl -d <distribution_name>", 0
 ```
 
-- 将 `<distribution_name>` 替换为你的 WSL 发行版名称（如 `Ubuntu`）
-- 参数 `0` 表示隐藏窗口运行（`1` 为正常窗口，`2` 为最小化窗口）
+- 将 `<distribution_name>` 替换为你的发行版名称（如 `Ubuntu`）
+- 参数 `0` 表示隐藏窗口运行
 
 ### 3.2 设置开机自启
 
-1. 按 `Win + R` 打开运行对话框
-2. 输入 `shell:startup`，点击确定，打开 Windows 启动文件夹
-3. 将 `wsl.vbs` 复制到该文件夹中
-4. 重启计算机生效
+1. `Win + R` 打开运行对话框，输入 `shell:startup` 回车
+2. 将 `wsl.vbs` 复制到打开的启动文件夹中
+3. 重启计算机生效
 
 参考：[Dev-blog by WS](https://www.cnblogs.com/wswind/p/17201979.html)
 
 ---
 
-## 4 代理配置（三种方案）
+## 4 代理配置
 
 在 Windows 上使用 Clash 等代理工具时，WSL 默认无法直接使用代理。以下提供三种解决方案。
 
-### 4.1 前置条件：防火墙设置
+### 4.1 前置条件：防火墙放行
 
-首先确保 Clash 核心程序能通过 Windows 防火墙：
+确保 Clash 核心程序能通过 Windows 防火墙：
 
-1. 打开 `Control Panel > System and Security > Windows Defender Firewall > Allow an app or feature through Windows Defender Firewall`
-2. 查找是否有 `clash-win64.exe` 的规则（注意不是 Clash For Windows，CFW 只是前端）
-3. 如果已有规则，确保**专用网络**和**公共网络**都勾选允许
-4. 如果没有规则，点击「允许其他应用」手动添加，路径通常在 `Clash for Windows\resources\static\files\win\x64\clash-win64.exe`
+1. 打开 **控制面板** → **Windows Defender 防火墙** → **允许应用通过防火墙**
+2. 找到 `clash-win64.exe`（注意不是 Clash For Windows 前端程序）
+3. 确保**专用网络**和**公共网络**都勾选允许
+4. 如果没有找到，点击「允许其他应用」手动添加，路径通常在 `Clash for Windows\resources\static\files\win\x64\clash-win64.exe`
 
 ### 4.2 方案一：环境变量（始终代理）
 
 将以下内容添加到 `~/.bashrc` 或 `~/.zshrc`：
 
 ```bash
-# proxy
+# 代理配置（始终生效）
 export HOSTIP=$(cat /etc/resolv.conf | grep "nameserver" | cut -f 2 -d " ")
 export http_proxy="http://$HOSTIP:7890"
 export https_proxy="http://$HOSTIP:7890"
@@ -145,62 +124,47 @@ export all_proxy="socks5://$HOSTIP:7890"
 export ALL_PROXY="socks5://$HOSTIP:7890"
 ```
 
-此方案会在每次打开终端时自动设置代理。`/etc/resolv.conf` 中的 nameserver 就是 Windows 主机的 IP。
+此方案每次打开终端时自动设置代理。`/etc/resolv.conf` 中的 nameserver 地址即为 Windows 主机 IP。
 
 ### 4.3 方案二：函数开关（按需代理）
 
 将以下内容添加到 `~/.bashrc` 或 `~/.zshrc`：
 
 ```bash
-# proxy
-proxy () {
+# 开启代理
+proxy() {
   export HOSTIP=$(cat /etc/resolv.conf | grep "nameserver" | cut -f 2 -d " ")
   export http_proxy="http://$HOSTIP:7890"
   export https_proxy="http://$HOSTIP:7890"
   export ALL_PROXY="http://$HOSTIP:7890"
-  #export all_proxy="socks5://$HOSTIP:7890"
-  #export ALL_PROXY="socks5://$HOSTIP:7890"
-  #export ALL_PROXY="http://$host_ip:7890"
   echo "HTTP Proxy on"
 }
-# no proxy
-unproxy () {
+
+# 关闭代理
+unproxy() {
   unset http_proxy
   unset https_proxy
-  #unset all_proxy
   unset ALL_PROXY
   echo "HTTP Proxy off"
 }
 ```
 
-使用方式：
-
-- 输入 `proxy` 开启代理
-- 输入 `unproxy` 关闭代理
+使用方式：终端输入 `proxy` 开启，`unproxy` 关闭。
 
 ### 4.4 方案三：镜像网络模式
 
-WSL2 支持镜像网络模式，使 WSL 和 Windows 共享同一网络栈，代理自动生效。
+WSL2 支持镜像网络模式，使 WSL 和 Windows 共享同一网络栈，代理自动生效，无需手动配置环境变量。
 
-编辑 Windows 用户目录下的 `.wslconfig` 文件（如 `C:\Users\你的用户名\.wslconfig`）：
+编辑 Windows 用户目录下的 `.wslconfig`（路径：`C:\Users\你的用户名\.wslconfig`）：
 
-```plaintext
-# Settings apply across all Linux distros running on WSL 2
+```ini
 [wsl2]
-
-# vmIdleTimeout = -1
-# autoMemoryReclaim = gradual
-
-networkingMode = bridged
-
-vmSwitch = "Hyper Switch"
-
-# networkingMode = mirrored
-# dnsTunneling = true
-# autoProxy = true
+networkingMode = mirrored
+dnsTunneling = true
+autoProxy = true
 ```
 
-> 可以使用 `bridged`（桥接模式）或 `mirrored`（镜像模式）。镜像模式下 WSL 会自动继承 Windows 的代理设置。
+> 镜像模式需要 Windows 11 22H2 及以上版本。也可以使用 `bridged` 桥接模式配合 `vmSwitch` 参数。
 
 参见：[WSL 中的高级设置配置](https://learn.microsoft.com/zh-cn/windows/wsl/wsl-config#wslconfig)
 
@@ -210,17 +174,17 @@ vmSwitch = "Hyper Switch"
 
 ### 5.1 导入后默认用户变为 root
 
-执行 `wsl --import` 后默认用户可能变为 root，使用对应发行版的 `config --default-user` 命令重新指定即可。
+执行 `wsl --import` 后默认用户会变为 root，使用对应发行版的 `config --default-user` 命令重新指定即可（见第 1 节）。
 
 ### 5.2 systemd 启用后端口冲突
 
-可以通过 `systemctl disable <service>` 禁用不需要的服务，或修改服务的监听端口。
+通过 `systemctl disable <service>` 禁用不需要的服务，或修改服务的监听端口。
 
-### 5.3 代理方案一/二在重启 WSL 后 IP 变化
+### 5.3 方案一/二在重启后 IP 变化
 
-WSL 每次重启后 Windows 主机 IP 可能变化，方案一和二通过动态读取 `/etc/resolv.conf` 解决了这个问题。如果该文件被 systemd-resolved 覆盖，可以在 `/etc/wsl.conf` 中添加：
+WSL 每次重启后 Windows 主机 IP 可能变化，方案一和二通过动态读取 `/etc/resolv.conf` 已解决此问题。如果该文件被 `systemd-resolved` 覆盖，可在 `/etc/wsl.conf` 中添加：
 
-```shell
+```ini
 [network]
 generateResolvConf = false
 ```
@@ -229,7 +193,7 @@ generateResolvConf = false
 
 ### 5.4 镜像模式下 localhost 不通
 
-确保 `.wslconfig` 中的配置正确，并且 WSL 版本足够新（需要 Windows 11 22H2 及以上）。
+确保 `.wslconfig` 配置正确，且 WSL 版本足够新（Windows 11 22H2+）。
 
 ---
 

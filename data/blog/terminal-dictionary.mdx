@@ -5,8 +5,10 @@ lastmod: '2026-04-04'
 tags: ['Linux']
 draft: false
 images: ['/static/images/blog/covers/cover-linux.png']
-summary: '推荐三款实用的终端词典工具：kd（Go 单文件、离线+在线、支持 NeoVim 插件）、sdcv（纯离线 StarDict 词库）、Wudao-dict-plus（Python 增强版无道词典），帮你在命令行里高效查词翻译。'
+summary: '推荐三款终端词典工具：kd（Go 单文件、离线+在线）、sdcv（纯离线 StarDict 词库）、Wudao-dict-plus（Python 增强版无道词典），在命令行里高效查词翻译。'
 ---
+
+![题图](/static/images/blog/terminal-dictionary/hero.png)
 
 写代码时遇到不认识的单词，切到浏览器查词再切回来，打断思路。终端词典可以让你不离开命令行就完成查词，保持专注。
 
@@ -47,7 +49,7 @@ kd -s hello       # 查词并发音
 
 ### NeoVim 集成
 
-如果你用 LazyVim 或其他 NeoVim 配置，可以安装 `kd_translate.nvim` 插件，在编辑器内直接查词，非常方便。
+如果你用 LazyVim 或其他 NeoVim 配置，可以安装 `kd_translate.nvim` 插件，在编辑器内直接查词。
 
 ## 2. sdcv — 纯离线词典
 
@@ -111,10 +113,10 @@ wd -L hello   # 详细模式
 
 ## 对比总结
 
-| 工具     | 语言   | 离线        | 在线    | 翻译 | 安装难度       | 维护状态 |
-| -------- | ------ | ----------- | ------- | ---- | -------------- | -------- |
-| **kd**   | Go     | ✅ 10万词   | ✅ 有道 | ✅   | 低（单文件）   | 活跃     |
-| **sdcv** | C++    | ✅ 依赖词库 | ❌      | ❌   | 低（包管理器） | 稳定     |
-| **wd**   | Python | ✅ SQLite   | ✅ 有道 | ❌   | 低（pip）      | 活跃     |
+| 工具     | 语言   | 离线     | 在线 | 翻译 | 安装难度       | 维护状态 |
+| -------- | ------ | -------- | ---- | ---- | -------------- | -------- |
+| **kd**   | Go     | 10万词   | 有道 |      | 低（单文件）   | 活跃     |
+| **sdcv** | C++    | 依赖词库 |      |      | 低（包管理器） | 稳定     |
+| **wd**   | Python | SQLite   | 有道 |      | 低（pip）      | 活跃     |
 
 **我的选择**：日常查词用 **kd**，它响应快、功能全、不折腾。sdcv 作为纯离线备选保留。如果你习惯 Python 生态，Wudao-dict-plus 也是不错的选择。

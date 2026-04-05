@@ -1,17 +1,28 @@
 ---
-title: 'clash load balancing'
+title: 'Clash 负载均衡配置指南'
 date: '2023-04-04'
-tags: ['Clash', '科学上网']
+tags: ['网络']
 draft: false
 images: ['/static/images/blog/covers/cover-proxy.png']
-summary: '文章介绍计算机端实现代理负载均衡的配置方法，通过修改Parsers、转换订阅为.yaml文件并添加代理组。含散列（同二级域名哈希选优质节点避风控）、轮询（轮换IP访问）两种策略，定时300秒测速，节点超时不计，支持多平台导入生效。'
+summary: '详解 Clash 代理负载均衡配置，包括散列和轮询两种策略的实现方法。'
 ---
 
-### 1\. The computer uses Paesers to achieve load balancing
+![题图](/static/images/blog/clash-load-balancing/hero.png)
 
-Replace the content in **setting->Profiles->Parsers** with the following:
+Clash 的负载均衡功能可以将流量分散到多个代理节点，避免单节点压力过大，同时降低 IP 风控风险。本文介绍两种实现方式：通过 Parsers 自动注入和手动编辑配置文件。
 
-```shell
+## 1 两种负载均衡策略
+
+- **散列（consistent-hashing）**：对同一二级域名使用相同节点，避免频繁切换 IP 触发风控
+- **轮询（round-robin）**：每次请求使用不同节点，适合需要切换 IP 的场景
+
+两种策略都支持定时测速（默认 300 秒），超时节点会自动排除。
+
+## 2 方式一：通过 Parsers 自动注入
+
+在 Clash 的 **Settings → Profiles → Parsers** 中填入以下内容：
+
+```yaml
 parsers:
   - reg: 'slbable$'
     yaml:
@@ -33,54 +44,60 @@ parsers:
         - proxy-groups.0.proxies.0+⚖️ 负载均衡-轮询
 ```
 
-- `reg: 'slbable$'`Triggered when the suffix of the url is `slbable`
-- **负载均衡-轮询**Representatives use different ip to access
-- **负载均衡-散列**Hash algorithm is used on behalf of the same second-level domain name, and high-quality nodes are selected for access. Avoid ip risk control problems.
-- `interval: 300`Represents a speed measurement and conversion every 300 seconds, and nodes that time out are not counted
+**配置说明：**
 
-### 2\. On the computer side, the `.yaml` file is dragged in to take effect
+- `reg: 'slbable$'`：当订阅 URL 以 `slbable` 结尾时触发
+- `interval: 300`：每 300 秒测速一次，超时节点不参与负载均衡
 
-1.  Export url through v2ray.
-2.  Use [subconverter](https://github.com/tindy2013/subconverter) and [简易版转换工具](https://bulianglin.com/archives/51.html) to achieve subscription conversion.
-3.  Open the converted link in the browser.
-4.  Save as `.yaml` file
-5.  Fill in `file\\file path#slbable` in `setting->url` to trigger subscription refresh, the essence is to refer to local files.
+**使用步骤：**
 
-### 3\. Rewrite the .yaml file, common to all platforms.
+1. 通过 V2Ray 导出订阅链接
+2. 使用 [subconverter](https://github.com/tindy2013/subconverter) 或[简易版转换工具](https://bulianglin.com/archives/51.html)进行订阅转换
+3. 在浏览器中打开转换后的链接，保存为 `.yaml` 文件
+4. 在 Clash 的 **Settings → URL** 中填入 `file\文件路径#slbable` 触发订阅刷新
 
-1.  Open the .yaml file with an editor, vscode is the best.
-2.  Find **proxy-groups->proxies (first)**, add two options
+## 3 方式二：手动编辑配置文件
 
-    ```shell
-    #Added to the first proxy policy group
-          - ⚖️ 负载均衡-轮询
-          - ⚖️ 负载均衡-散列
-    ```
+这种方式适用于所有平台，直接编辑 `.yaml` 配置文件。
 
-3.  Find the last group and add the following content after it.
+### 3.1 添加策略组引用
 
-    ```shell
-    #Add proxy policy group
-      - name: ⚖️ 负载均衡-散列
-        type: load-balance
-        url: http://www.google.com/generate_204
-        interval: 300
-        strategy: consistent-hashing
-        proxies:
-          - P1
-          - P2
-          - P3
-      - name: ⚖️ 负载均衡-轮询
-        type: load-balance
-        url: http://www.google.com/generate_204
-        interval: 300
-        strategy: round-robin
-        proxies:
-          - P1
-          - P2
-          - P3
-    ```
+找到 **proxy-groups** 的第一个策略组，在其 `proxies` 列表中添加：
 
-    Among them, P1, P2, and P3 represent nodes.
+```yaml
+# 在第一个代理策略组的 proxies 中添加
+- ⚖️ 负载均衡-轮询
+- ⚖️ 负载均衡-散列
+```
 
-4.  Import the configuration file to the required device.
+### 3.2 添加负载均衡策略组
+
+在最后一个策略组后面添加：
+
+```yaml
+# 添加负载均衡策略组
+- name: ⚖️ 负载均衡-散列
+  type: load-balance
+  url: http://www.google.com/generate_204
+  interval: 300
+  strategy: consistent-hashing
+  proxies:
+    - 节点1
+    - 节点2
+    - 节点3
+- name: ⚖️ 负载均衡-轮询
+  type: load-balance
+  url: http://www.google.com/generate_204
+  interval: 300
+  strategy: round-robin
+  proxies:
+    - 节点1
+    - 节点2
+    - 节点3
+```
+
+将 `节点1`、`节点2`、`节点3` 替换为实际的代理节点名称。
+
+### 3.3 导入生效
+
+将编辑好的配置文件导入到目标设备的 Clash 客户端即可。

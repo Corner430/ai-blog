@@ -4,11 +4,11 @@ test.describe('Blog Post Page', () => {
   test('should display article title, date, and content', async ({ page }) => {
     await page.goto('/blog/hello-world')
     // Title
-    await expect(page.getByRole('heading', { name: 'Hello World' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '你好，世界' })).toBeVisible()
     // Date
     await expect(page.locator('time')).toBeVisible()
     // Content
-    await expect(page.getByText('Welcome to my blog')).toBeVisible()
+    await expect(page.getByRole('heading', { name: '欢迎来到我的博客' })).toBeVisible()
   })
 
   test('should navigate back to blog list via "返回博客" link', async ({ page }) => {

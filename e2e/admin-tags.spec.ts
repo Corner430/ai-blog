@@ -5,9 +5,9 @@ import { loginAsAdmin } from './helpers/admin-auth'
 const mockArticles = [
   {
     filename: 'hello-world.mdx',
-    title: 'Hello World',
-    tags: ['blog'],
-    content: 'Welcome to my blog.',
+    title: '你好，世界',
+    tags: ['Linux'],
+    content: '博客开篇文章。',
   },
 ]
 
@@ -22,10 +22,10 @@ test.describe('Auto-Tagging Management', () => {
     await expect(page.getByRole('heading', { name: '自动标签管理' })).toBeVisible()
     // Article title in the card
     const card = page.locator('.rounded-lg.border').first()
-    await expect(card.getByText('Hello World')).toBeVisible({ timeout: 15000 })
+    await expect(card.getByText('你好，世界')).toBeVisible({ timeout: 15000 })
     await expect(card.getByText('hello-world.mdx')).toBeVisible()
     // Tag "blog" displayed as a span in the card
-    await expect(card.locator('span').filter({ hasText: 'blog' })).toBeVisible()
+    await expect(card.locator('span').filter({ hasText: 'Linux' })).toBeVisible()
   })
 
   test('should show empty state when no articles', async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe('Auto-Tagging Management', () => {
     await mockJsonResponse(page, '**/api/ai/tags', { tags: ['javascript', 'typescript', 'react'] })
     await page.goto('/admin/tags')
     const card = page.locator('.rounded-lg.border').first()
-    await expect(card.getByText('Hello World')).toBeVisible({ timeout: 15000 })
+    await expect(card.getByText('你好，世界')).toBeVisible({ timeout: 15000 })
     // Click generate tags button
     await card.getByRole('button', { name: /生成标签/ }).click()
     // Suggested tags should appear with checkboxes inside the card
@@ -69,7 +69,7 @@ test.describe('Auto-Tagging Management', () => {
     })
     await page.goto('/admin/tags')
     const card = page.locator('.rounded-lg.border').first()
-    await expect(card.getByText('Hello World')).toBeVisible({ timeout: 15000 })
+    await expect(card.getByText('你好，世界')).toBeVisible({ timeout: 15000 })
     await card.getByRole('button', { name: /生成标签/ }).click()
     await expect(card.getByText('javascript')).toBeVisible({ timeout: 15000 })
     // Uncheck 'react' by clicking its checkbox

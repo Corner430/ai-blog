@@ -1,23 +1,84 @@
 ---
-title: 'Linux通过davfs2挂载WebDav网盘'
+title: 'Linux 通过 davfs2 挂载 WebDAV 网盘'
 date: '2023-12-10'
-tags: ['Linux', 'WebDav']
+tags: ['Linux']
 draft: false
 images: ['/static/images/blog/covers/cover-linux.png']
-summary: '本文介绍通过davfs2配置Alist WebDAV服务自动挂载的方法，含安装、创建挂载点等步骤。关键配置为：编辑davfs2.conf设use_lock=0修正文件操作错误，修改secrets添加账号密码，fstab添加自动挂载条目，创建符号链接映射文件夹，实现稳定便捷访问。'
+summary: '使用 davfs2 在 Linux 上挂载 WebDAV 网盘（以 Alist 为例），实现开机自动挂载和符号链接映射。'
 ---
+
+![题图](/static/images/blog/Linux通过davfs2挂载WebDav网盘/hero.png)
+
+WebDAV 是一种基于 HTTP 的文件访问协议，很多网盘服务（如 Alist、坚果云、NextCloud）都支持 WebDAV 接口。通过 davfs2，可以在 Linux 上将 WebDAV 服务挂载为本地目录，像访问本地文件一样操作远程文件。
+
+本文以 [Alist](https://github.com/alist-org/alist) 的 WebDAV 服务为例，介绍完整的挂载配置流程。
+
+## 安装 davfs2
 
 ```bash
+# Debian/Ubuntu
 sudo apt install davfs2
 
-mkdir /mnt/alist/
-sudo mount.davfs http://locaohost:8080/dav/ /mnt/alist/
-# 输入账号密码并手动连接
+# Arch Linux
+sudo pacman -S davfs2
 ```
 
----
+## 手动挂载测试
 
-1.  编辑 `/etc/davfs2/davfs2.conf`，找到其中的 `use_lock` 取消注释，并修改值为 `0`。（用于修正复制剪切文件错误）
-2.  修改 `/etc/davfs2/secrets`，在末尾添加 `http://localhost:8080/dav/ admin password`
-3.  编辑 `/etc/fstab`，在最后一行添加以下内容 `http://localhost:8080/dav/ /mnt/alist/ davfs defaults 0 0`
-4.  映射文件夹 `ln -s /mnt/alist/ /home/alist/`
+先创建挂载点并手动测试连接：
+
+```bash
+# 创建挂载目录
+sudo mkdir -p /mnt/alist
+
+# 手动挂载（会提示输入账号密码）
+sudo mount.davfs http://localhost:8080/dav/ /mnt/alist/
+```
+
+如果能正常挂载并访问文件，说明 WebDAV 服务本身没问题，接下来配置自动挂载。
+
+## 配置自动挂载
+
+### 第一步：修复文件操作错误
+
+编辑 `/etc/davfs2/davfs2.conf`，找到 `use_lock` 选项，取消注释并设为 `0`：
+
+```
+use_lock 0
+```
+
+这一步用于修正复制、剪切文件时可能出现的锁定错误。
+
+### 第二步：保存账号密码
+
+编辑 `/etc/davfs2/secrets`，在末尾添加一行：
+
+```
+http://localhost:8080/dav/ admin password
+```
+
+将 `admin` 和 `password` 替换为你的 WebDAV 账号和密码。这样挂载时就不需要每次手动输入了。
+
+### 第三步：配置开机自动挂载
+
+编辑 `/etc/fstab`，在末尾添加：
+
+```
+http://localhost:8080/dav/ /mnt/alist/ davfs defaults 0 0
+```
+
+保存后执行 `sudo mount -a` 测试，如果没有报错就说明配置正确。下次开机会自动挂载。
+
+### 第四步：创建便捷访问的符号链接（可选）
+
+如果希望从 Home 目录快速访问挂载的网盘：
+
+```bash
+ln -s /mnt/alist/ ~/alist
+```
+
+## 常见问题
+
+- **挂载后无法复制文件**：检查 `use_lock` 是否已设为 `0`
+- **开机挂载失败**：确保 WebDAV 服务在 davfs2 挂载之前已启动，必要时调整 systemd 服务依赖
+- **权限问题**：如果普通用户无法访问挂载目录，可以在 fstab 中添加 `uid=1000,gid=1000` 参数

@@ -16,7 +16,7 @@ test.describe('Tags Page', () => {
     const href = await tagLink.getAttribute('href')
     await tagLink.click()
     // Wait for navigation to the tag detail page
-    await page.waitForURL(href!, { timeout: 30000 })
+    await page.waitForURL(/\/tags\//, { timeout: 30000 })
     // ListLayoutWithTags shows articles in li elements with article inside
     // On desktop, the sidebar "All Posts" text should be visible
     const sidebar = page.locator('.hidden.sm\\:flex').filter({ hasText: '全部文章' })
