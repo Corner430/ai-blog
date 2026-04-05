@@ -22,45 +22,83 @@ interface ListLayoutProps {
   pagination?: PaginationProps
 }
 
+function getPageHref(basePath: string, page: number) {
+  return page === 1 ? `/${basePath}/` : `/${basePath}/page/${page}`
+}
+
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  const pages: (number | '...')[] = [1]
+  if (current > 3) pages.push('...')
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  for (let i = start; i <= end; i++) pages.push(i)
+  if (current < total - 2) pages.push('...')
+  pages.push(total)
+  return pages
+}
+
 function Pagination({ totalPages, currentPage }: PaginationProps) {
   const pathname = usePathname()
-  const segments = pathname.split('/')
-  const lastSegment = segments[segments.length - 1]
   const basePath = pathname
-    .replace(/^\//, '') // Remove leading slash
-    .replace(/\/page\/\d+\/?$/, '') // Remove any trailing /page
-    .replace(/\/$/, '') // Remove trailing slash
-  const prevPage = currentPage - 1 > 0
-  const nextPage = currentPage + 1 <= totalPages
+    .replace(/^\//, '')
+    .replace(/\/page\/\d+\/?$/, '')
+    .replace(/\/$/, '')
+  const prevPage = currentPage > 1
+  const nextPage = currentPage < totalPages
+  const pages = getPageNumbers(currentPage, totalPages)
 
   return (
     <div className="space-y-2 pt-6 pb-8 md:space-y-5">
-      <nav className="flex justify-between">
-        {!prevPage && (
-          <button className="cursor-auto disabled:opacity-50" disabled={!prevPage}>
-            上一页
-          </button>
-        )}
-        {prevPage && (
+      <nav className="flex items-center justify-center space-x-1">
+        {prevPage ? (
           <Link
-            href={currentPage - 1 === 1 ? `/${basePath}/` : `/${basePath}/page/${currentPage - 1}`}
+            href={getPageHref(basePath, currentPage - 1)}
             rel="prev"
+            className="rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            aria-label="上一页"
           >
-            上一页
+            «
           </Link>
+        ) : (
+          <span className="rounded-md px-3 py-2 text-sm text-gray-300 dark:text-gray-600">«</span>
         )}
-        <span>
-          {currentPage} / {totalPages}
-        </span>
-        {!nextPage && (
-          <button className="cursor-auto disabled:opacity-50" disabled={!nextPage}>
-            下一页
-          </button>
+        {pages.map((page, i) =>
+          page === '...' ? (
+            <span key={`dots-${i}`} className="px-2 py-2 text-sm text-gray-400 dark:text-gray-500">
+              …
+            </span>
+          ) : page === currentPage ? (
+            <span
+              key={page}
+              className="bg-primary-500 rounded-md px-3 py-2 text-sm font-bold text-white"
+              aria-current="page"
+            >
+              {page}
+            </span>
+          ) : (
+            <Link
+              key={page}
+              href={getPageHref(basePath, page)}
+              className="rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              {page}
+            </Link>
+          )
         )}
-        {nextPage && (
-          <Link href={`/${basePath}/page/${currentPage + 1}`} rel="next">
-            下一页
+        {nextPage ? (
+          <Link
+            href={getPageHref(basePath, currentPage + 1)}
+            rel="next"
+            className="rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            aria-label="下一页"
+          >
+            »
           </Link>
+        ) : (
+          <span className="rounded-md px-3 py-2 text-sm text-gray-300 dark:text-gray-600">»</span>
         )}
       </nav>
     </div>
