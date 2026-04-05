@@ -2,39 +2,81 @@
   <a href="README.md">English</a> | <a href="README_zh.md">中文</a>
 </p>
 
+<p align="center">
+  <img src="public/static/images/readme/hero-banner.png" alt="Corner430 AI Blog" width="720" />
+</p>
+
 # Corner430 AI Blog
 
-A modern blog built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/), integrated with [Tencent Hunyuan AI](https://cloud.tencent.com/document/product/1729).
-
-Based on [tailwind-nextjs-starter-blog](https://github.com/timlrx/tailwind-nextjs-starter-blog) v2. Features 48 blog posts (migrated from Hexo and consolidated into comprehensive guides) and a full suite of AI-powered tools.
+A modern blog built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/), integrated with [Tencent Hunyuan AI](https://cloud.tencent.com/document/product/1729). Based on [tailwind-nextjs-starter-blog](https://github.com/timlrx/tailwind-nextjs-starter-blog) v2, featuring 48 blog posts and a full suite of AI-powered tools.
 
 ## AI Features
 
-- **AI Summary** — Auto-generated article summaries with streaming output. Cached in localStorage (keyed by `slug + contentHash`) to avoid repeated API calls.
-- **AI Q&A** — Floating chat panel on article pages. Readers ask questions about the current article; AI answers based on article content with multi-turn conversation support.
-- **Semantic Search** — Replaces the default KBar search. Embedding index is generated at build time (`public/embedding-index.json`), and queries are matched via cosine similarity at runtime.
-- **Auto Tags** — AI-suggested tags for articles, managed through the admin dashboard with checkbox selection and frontmatter write-back.
-- **Cover Image Generation** — Async task model (submit job -> poll status -> preview/download). Powered by Hunyuan image generation API.
-- **Writing Assistant** — AI-powered polish and continue-writing with streaming output, copy, and replace-to-editor support.
+<p align="center">
+  <img src="public/static/images/readme/ai-features.png" alt="AI Features" width="640" />
+</p>
 
-All AI features gracefully degrade when `HUNYUAN_API_KEY` is not configured — APIs return `503`, and frontend components handle errors without breaking the page.
+- **AI Summary** — Auto-generated article summaries with streaming output, cached in localStorage.
+- **AI Q&A** — Floating chat panel for readers to ask questions about the current article.
+- **Semantic Search** — Embedding-based cosine similarity search, replacing default KBar.
+- **Auto Tags** — AI-suggested tags with checkbox selection and frontmatter write-back.
+- **Cover Image Generation** — Async task model (submit -> poll -> preview/download).
+- **Writing Assistant** — AI-powered polish and continue-writing with streaming output.
 
-All AI API endpoints are protected by **rate limiting** (20 requests/min per IP). See [Rate Limiting](#rate-limiting) below.
+All AI features gracefully degrade when `HUNYUAN_API_KEY` is not configured. All AI API endpoints are protected by **rate limiting** (20 req/min per IP).
 
 ## UI & Reading Experience
 
-- **Reading Progress Bar** — Fixed bar at the top of the viewport showing scroll progress on article pages.
-- **Floating Table of Contents** — Sidebar TOC on 2xl+ screens with IntersectionObserver-based active section highlighting.
-- **Reading Time & Word Count** — Displayed on article listings and post pages (e.g. "1234 字 · 5 分钟").
-- **Post Pinning/Sticky** — `sticky` frontmatter field for pinning important posts to the top of listings, with a pin icon indicator.
-- **Copyright Declaration** — CC BY-NC-SA 4.0 notice at the bottom of every post, bilingual (zh/en).
-- **Page View Counter** — Displays per-page view count from Umami analytics API.
-- **Live2D Widget** — Toggleable anime character widget loaded from CDN, with localStorage persistence.
-- **Click Animation** — Colored hearts float up on click anywhere on the page.
-- **Image Lightbox** — Click-to-zoom fullscreen image viewer on all article images using medium-zoom.
-- **Chinese Localization** — All UI text translated to Chinese (zh-CN) across layouts, navigation, and components.
-- **Resources Page** — Curated learning resources organized by category (accessible via `/resources` in the navigation bar).
-- **Projects Showcase** — Project cards with cover images, descriptions, and GitHub links (`/projects`).
+<p align="center">
+  <img src="public/static/images/readme/ui-features.png" alt="UI Features" width="640" />
+</p>
+
+- **Reading Progress Bar** — Fixed scroll progress indicator at the top of article pages.
+- **Floating Table of Contents** — Sidebar TOC with IntersectionObserver-based active highlighting.
+- **Reading Time & Word Count** — Displayed on article listings and post pages.
+- **Post Pinning** — `sticky` frontmatter field for pinning important posts to the top.
+- **Copyright Declaration** — CC BY-NC-SA 4.0 notice at the bottom of every post (zh/en).
+- **Page View Counter** — Per-page view count from Umami analytics.
+- **Live2D Widget** — Toggleable anime character widget with localStorage persistence.
+- **Click Animation** — Colored hearts float up on click.
+- **Image Lightbox** — Click-to-zoom fullscreen viewer using medium-zoom.
+- **Chinese Localization** — Full zh-CN translation across all UI.
+- **Resources Page** — Curated learning resources organized by category (`/resources`).
+- **Projects Showcase** — Project cards with covers, descriptions, and GitHub links (`/projects`).
+
+## Admin Dashboard
+
+<p align="center">
+  <img src="public/static/images/readme/admin-dashboard.png" alt="Admin Dashboard" width="640" />
+</p>
+
+Access at `/admin` (not exposed in the navigation bar).
+
+- **Cover Image Generation** (`/admin/cover`) — Submit generation task, poll progress, preview and download.
+- **Auto Tags** (`/admin/tags`) — Browse articles, generate AI tag suggestions, write to frontmatter.
+- **Writing Assistant** (`/admin/writing`) — Polish or continue-write with streaming result.
+
+## Architecture
+
+<p align="center">
+  <img src="public/static/images/readme/architecture.png" alt="Architecture" width="640" />
+</p>
+
+| Layer         | Technology                                   | Notes                                     |
+| ------------- | -------------------------------------------- | ----------------------------------------- |
+| Framework     | Next.js 15 (App Router)                      | React Server Components                   |
+| Language      | TypeScript                                   | Type-safe                                 |
+| Styling       | Tailwind CSS 4                               | Dark/light theme support                  |
+| Content       | MDX + Contentlayer                           | Markdown with embedded React components   |
+| AI Text       | Tencent Hunyuan (OpenAI-compatible)          | `ai` v6 (Vercel AI SDK) + `openai` v6     |
+| AI Image      | Hunyuan Image Generation (OpenAI-compatible) | Async job-based API                       |
+| Rate Limiting | In-memory per-IP limiter                     | 20 req/min on all AI endpoints            |
+| E2E Testing   | Playwright                                   | 16 spec files, `page.route()` API mocking |
+| Unit Testing  | Jest + React Testing Library                 | 146 tests across 30 suites                |
+| CI            | GitHub Actions                               | Lint + Build + Jest                       |
+| Deployment    | Vercel                                       | Git push auto-deploy                      |
+| Comments      | Giscus                                       | Based on GitHub Discussions               |
+| Analytics     | Umami                                        | Page view tracking + counter display      |
 
 ## Writing Blog Posts
 
@@ -63,32 +105,6 @@ Your article content here. Supports standard Markdown and embedded React compone
 | `sticky`  | Pin order (lower number = higher priority, e.g. `1` appears before `2`); omit to leave unpinned |
 
 After writing, `git push` to `main` and Vercel will auto-deploy.
-
-## Admin Dashboard
-
-Access at `/admin` by navigating directly to the URL (e.g., `http://localhost:3000/admin` or `https://your-site.vercel.app/admin`). It is not exposed in the public navigation bar.
-
-- **Cover Image Generation** (`/admin/cover`) — Input title + summary, submit generation task, poll progress, preview result, download image or copy URL.
-- **Auto Tags** (`/admin/tags`) — Browse article list, generate AI tag suggestions, select/deselect tags, write selected tags to MDX frontmatter.
-- **Writing Assistant** (`/admin/writing`) — Input text, choose polish or continue-writing, view streaming result, copy or replace back to editor.
-
-## Tech Stack
-
-| Layer         | Technology                                   | Notes                                     |
-| ------------- | -------------------------------------------- | ----------------------------------------- |
-| Framework     | Next.js 15 (App Router)                      | React Server Components                   |
-| Language      | TypeScript                                   | Type-safe                                 |
-| Styling       | Tailwind CSS 4                               | Dark/light theme support                  |
-| Content       | MDX + Contentlayer                           | Markdown with embedded React components   |
-| AI Text       | Tencent Hunyuan (OpenAI-compatible)          | `ai` v6 (Vercel AI SDK) + `openai` v6     |
-| AI Image      | Hunyuan Image Generation (OpenAI-compatible) | Async job-based API                       |
-| Rate Limiting | In-memory per-IP limiter                     | 20 req/min on all AI endpoints            |
-| E2E Testing   | Playwright                                   | 16 spec files, `page.route()` API mocking |
-| Unit Testing  | Jest + React Testing Library                 | 146 tests across 30 suites                |
-| CI            | GitHub Actions                               | Lint + Build + Jest                       |
-| Deployment    | Vercel                                       | Git push auto-deploy                      |
-| Comments      | Giscus                                       | Based on GitHub Discussions               |
-| Analytics     | Umami                                        | Page view tracking + counter display      |
 
 ## Project Structure
 
