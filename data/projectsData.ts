@@ -7,6 +7,13 @@ interface Project {
 
 const projectsData: Project[] = [
   {
+    title: 'GitHub Profile',
+    description:
+      '个人 GitHub 主页，展示技术栈、开源项目、贡献统计与活动图表。涵盖 C++ 系统编程、AI/ML、全栈开发等方向，记录量化交易系统与分布式网络框架的持续探索。',
+    imgSrc: '/static/images/projects/github-profile.png',
+    href: 'https://github.com/Corner430/Corner430',
+  },
+  {
     title: 'AI Blog',
     description:
       '基于 Next.js 15 和腾讯混元大模型打造的智能博客系统。集成 AI 摘要生成、语义搜索、智能问答、封面图自动生成、标签推荐和写作助手等功能，支持 MDX 内容格式与 Giscus 评论系统。',
