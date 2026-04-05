@@ -41,6 +41,18 @@ const resourcesData: ResourceCategory[] = [
       },
     ],
   },
+  {
+    title: '分布式',
+    icon: '🌐',
+    items: [
+      {
+        title: 'Zookeeper 原理详解',
+        description:
+          '深入讲解 Zookeeper 的核心原理，包括 zxid、myid 等关键概念，以及 ZAB 协议的工作机制。',
+        url: 'https://wxler.github.io/2021/03/01/175946/#42-zxid%E5%92%8Cmyid',
+      },
+    ],
+  },
 ]
 
 export default resourcesData
