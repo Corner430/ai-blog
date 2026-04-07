@@ -364,21 +364,117 @@ dd      → 删除整行
 ci"     → 修改引号内内容
 ```
 
-### 7.3 z — 智能目录跳转
+### 7.3 zoxide — 智能目录跳转（替代 z）
 
-根据访问频率和最近时间计算权重，实现模糊跳转。
+[zoxide](https://github.com/ajeetdsouza/zoxide) 是 `z` / `autojump` 的现代替代品，用 Rust 编写，GitHub 25k+ stars。相比传统的 `z` 插件，zoxide 速度更快、算法更智能（基于 frecency 算法），支持交互式选择（`zi`）。
+
+**安装 zoxide**：
 
 ```bash
-# 之前访问过 /data/workspace/ai-blog
+# cargo（推荐）
+cargo install zoxide --locked
+
+# 或 Homebrew
+brew install zoxide
+
+# 或 apt（Ubuntu 21.04+）
+sudo apt install zoxide
+```
+
+在 `plugins=()` 中用 `zoxide` 替代 `z`，Oh My Zsh 会自动初始化。使用方式与 `z` 完全兼容：
+
+```bash
+# 模糊跳转
 z ai-blog
 # 直接跳转到 /data/workspace/ai-blog
 
-# 之前访问过 /home/user/projects/frontend
-z front
-# 跳转到 /home/user/projects/frontend
+# 交互式选择（zoxide 独有）
+zi proj
+# 弹出匹配列表，用方向键选择
 ```
 
-`z` 会自动学习你的目录访问习惯，用的越多越智能。
+> **z vs zoxide**：
+>
+> | 特性     | z（内置）   | zoxide                    |
+> | -------- | ----------- | ------------------------- |
+> | 语言     | Shell 脚本  | Rust                      |
+> | 速度     | 快          | 更快                      |
+> | 交互模式 | 无          | `zi` 交互选择             |
+> | 算法     | frecency    | 改进版 frecency           |
+> | 跨 Shell | 仅 Zsh/Bash | Zsh/Bash/Fish/Nushell/... |
+
+### 7.4 extract — 万能解压
+
+不用再记 `tar -xzf`、`unzip`、`7z x` 等各种解压命令，统一用 `extract`：
+
+```bash
+extract archive.tar.gz
+extract file.zip
+extract package.7z
+extract image.iso
+```
+
+支持的格式：`.tar.gz`、`.tar.bz2`、`.tar.xz`、`.zip`、`.rar`、`.7z`、`.gz`、`.bz2`、`.xz`、`.iso`、`.deb`、`.rpm` 等。
+
+### 7.5 sudo — 快速添加 sudo
+
+忘记加 `sudo`？按两下 `Esc` 键，自动在当前命令前插入 `sudo`：
+
+```bash
+apt install vim          # 输入后发现没权限
+# 按 Esc Esc
+sudo apt install vim     # 自动补上 sudo
+```
+
+这是使用频率最高的内置插件之一。
+
+### 7.6 copypath / copyfile — 复制路径和文件内容
+
+```bash
+# 复制当前目录的绝对路径到剪贴板
+copypath
+
+# 复制指定文件的内容到剪贴板
+copyfile ~/.zshrc
+```
+
+配合远程开发场景非常方便。
+
+### 7.7 web-search — 终端搜索
+
+直接从终端打开浏览器搜索：
+
+```bash
+google "oh my zsh plugins"
+bing "zoxide vs z"
+github "powerlevel10k"
+stackoverflow "zsh slow startup"
+```
+
+### 7.8 docker — Docker 补全和别名
+
+| 别名   | 完整命令               | 说明         |
+| ------ | ---------------------- | ------------ |
+| `dps`  | `docker ps`            | 查看容器     |
+| `dpa`  | `docker ps -a`         | 查看所有容器 |
+| `di`   | `docker images`        | 查看镜像     |
+| `drm`  | `docker rm`            | 删除容器     |
+| `drmi` | `docker rmi`           | 删除镜像     |
+| `dex`  | `docker exec -it`      | 进入容器     |
+| `dl`   | `docker logs -f`       | 查看日志     |
+| `dco`  | `docker compose`       | compose 操作 |
+| `dcup` | `docker compose up -d` | 启动服务     |
+| `dcdn` | `docker compose down`  | 停止服务     |
+
+### 7.9 npm — npm 补全和别名
+
+| 别名   | 完整命令       | 说明     |
+| ------ | -------------- | -------- |
+| `npmg` | `npm i -g`     | 全局安装 |
+| `npmS` | `npm i -S`     | 生产依赖 |
+| `npmD` | `npm i -D`     | 开发依赖 |
+| `npmO` | `npm outdated` | 过期检查 |
+| `npmL` | `npm list`     | 依赖列表 |
 
 ## 8 完整 .zshrc 配置
 
@@ -404,7 +500,14 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(
   git                          # Git 别名和补全
   vi-mode                      # 终端中使用 Vi 键位
-  z                            # 智能目录跳转
+  zoxide                       # 智能目录跳转（替代 z）
+  extract                      # 万能解压
+  sudo                         # 双击 Esc 加 sudo
+  copypath                     # 复制当前路径到剪贴板
+  copyfile                     # 复制文件内容到剪贴板
+  web-search                   # 终端直接搜索
+  docker                       # Docker 补全和别名
+  npm                          # npm 补全和别名
   zsh-autosuggestions          # 历史命令自动补全
   zsh-syntax-highlighting      # 命令语法高亮
   fast-syntax-highlighting     # 更快更丰富的语法高亮
@@ -468,6 +571,15 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 echo "=== 安装 Powerlevel10k ==="
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
   ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+
+echo "=== 安装 zoxide ==="
+if command -v cargo &> /dev/null; then
+  cargo install zoxide --locked
+elif command -v brew &> /dev/null; then
+  brew install zoxide
+else
+  curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+fi
 
 echo "=== 安装第三方插件 ==="
 git clone https://github.com/zsh-users/zsh-autosuggestions \
@@ -545,4 +657,5 @@ ls ~/.oh-my-zsh/plugins/
 - [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
 - [fast-syntax-highlighting](https://github.com/zdharma-continuum/fast-syntax-highlighting)
 - [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete)
+- [zoxide](https://github.com/ajeetdsouza/zoxide)
 - [Nerd Fonts](https://www.nerdfonts.com/)
