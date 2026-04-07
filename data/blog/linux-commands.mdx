@@ -1,0 +1,675 @@
+---
+title: 'Linux 命令实战手册：全栈开发者的终端生存指南'
+date: '2026-04-07'
+tags: ['Linux']
+draft: false
+images: ['/static/images/blog/covers/cover-linux-cmd.png']
+summary: '按场景组织的 Linux 命令速查手册。涵盖文件操作、文本处理、权限管理、进程控制、I/O 重定向、磁盘存储、内存性能、网络排查、系统服务、包管理，以及常用组合技。'
+---
+
+![题图](/static/images/blog/linux-commands/hero.png)
+
+## 1 前言
+
+这不是一本 Linux 教科书，而是一张**命令地图**。全文按开发者日常遇到的场景分区，每个命令只给最常用的 2-3 种写法。遇到问题时：看图定位区域 → 查表找命令 → 复制执行。
+
+## 2 命令全景地图
+
+![Linux 命令全景地图](/static/images/blog/linux-commands/command-map.png)
+
+上图是全文的导航索引。六大区域对应后续章节，每个区域标注了最核心的命令。找到你的场景，直接跳到对应章节。
+
+## 3 文件与目录
+
+### 3.1 浏览与导航
+
+| 命令   | 用途     | 常用写法                                                               |
+| ------ | -------- | ---------------------------------------------------------------------- |
+| `ls`   | 列出文件 | `ls -la`（详细+隐藏）、`ls -lhS`（按大小排序）、`ls -lt`（按时间排序） |
+| `cd`   | 切换目录 | `cd -`（上一个目录）、`cd ~`（主目录）、`cd ../..`（上两级）           |
+| `pwd`  | 当前路径 | `pwd`                                                                  |
+| `tree` | 树形结构 | `tree -L 2`（只显示两层）、`tree -d`（只显示目录）                     |
+
+### 3.2 复制、移动、删除
+
+| 命令    | 用途        | 常用写法                                                 |
+| ------- | ----------- | -------------------------------------------------------- |
+| `cp`    | 复制        | `cp -r dir/ dst/`（递归复制目录）、`cp -i`（覆盖前确认） |
+| `mv`    | 移动/重命名 | `mv old new`（重命名）、`mv file dir/`（移动）           |
+| `rm`    | 删除        | `rm -rf dir/`（递归强制删除）、`rm -i`（逐个确认）       |
+| `mkdir` | 创建目录    | `mkdir -p a/b/c`（递归创建）                             |
+| `touch` | 创建空文件  | `touch file.txt`                                         |
+
+### 3.3 链接
+
+| 命令       | 用途                 | 常用写法                                  |
+| ---------- | -------------------- | ----------------------------------------- |
+| `ln -s`    | 符号链接（快捷方式） | `ln -s /path/to/target link_name`         |
+| `ln`       | 硬链接               | `ln target link_name`                     |
+| `readlink` | 查看链接指向         | `readlink -f link_name`（解析到最终路径） |
+
+### 3.4 查找文件
+
+| 命令      | 用途                 | 常用写法                                         |
+| --------- | -------------------- | ------------------------------------------------ |
+| `find`    | 按条件查找           | `find . -name "*.log"`（按名称）                 |
+|           |                      | `find . -type f -size +100M`（大于 100M 的文件） |
+|           |                      | `find . -mtime -7`（7 天内修改过的）             |
+|           |                      | `find . -name "*.tmp" -delete`（查找并删除）     |
+| `locate`  | 快速查找（基于索引） | `locate filename`（需先 `updatedb`）             |
+| `which`   | 查找命令位置         | `which python`                                   |
+| `whereis` | 查找二进制/源码/手册 | `whereis gcc`                                    |
+
+### 3.5 通配符
+
+| 符号    | 含义               | 示例                                  |
+| ------- | ------------------ | ------------------------------------- |
+| `*`     | 匹配任意多个字符   | `ls *.log`                            |
+| `?`     | 匹配单个字符       | `ls file?.txt`                        |
+| `[abc]` | 匹配括号内任一字符 | `ls file[123].txt`                    |
+| `{a,b}` | 展开为多个选项     | `cp file.{txt,bak}`（复制为两个文件） |
+
+## 4 文本处理
+
+### 4.1 查看文件
+
+| 命令   | 用途     | 常用写法                                                  |
+| ------ | -------- | --------------------------------------------------------- |
+| `cat`  | 查看全文 | `cat file`、`cat -n file`（显示行号）                     |
+| `head` | 查看开头 | `head -n 20 file`（前 20 行）                             |
+| `tail` | 查看结尾 | `tail -n 20 file`（后 20 行）、`tail -f file`（实时跟踪） |
+| `less` | 分页浏览 | `less file`（`/` 搜索，`q` 退出）                         |
+
+> `tail -f` 是看实时日志的利器。加 `grep` 过滤更强：`tail -f app.log | grep ERROR`。
+
+### 4.2 搜索文本
+
+| 命令   | 用途            | 常用写法                                          |
+| ------ | --------------- | ------------------------------------------------- | --------------------------- |
+| `grep` | 文本搜索        | `grep "pattern" file`                             |
+|        |                 | `grep -r "TODO" .`（递归搜索目录）                |
+|        |                 | `grep -i "error" file`（忽略大小写）              |
+|        |                 | `grep -n "func" file`（显示行号）                 |
+|        |                 | `grep -v "debug" file`（排除匹配行）              |
+|        |                 | `grep -E "err                                     | warn" file`（正则，多模式） |
+|        |                 | `grep -c "error" file`（统计匹配行数）            |
+| `rg`   | ripgrep（更快） | `rg "pattern" .`（递归搜索，自动忽略 .gitignore） |
+
+### 4.3 文本处理
+
+**awk** — 按列处理文本，三板斧够用：
+
+```bash
+# 打印第 1 和第 3 列
+awk '{print $1, $3}' file
+
+# 按条件过滤（第 3 列大于 100）
+awk '$3 > 100' file
+
+# 指定分隔符（如 CSV）
+awk -F',' '{print $2}' data.csv
+```
+
+**sed** — 流编辑器，主要用替换和删除：
+
+```bash
+# 替换（每行第一个匹配）
+sed 's/old/new/' file
+
+# 全局替换（每行所有匹配）
+sed 's/old/new/g' file
+
+# 原地替换（直接修改文件）
+sed -i 's/old/new/g' file
+
+# 删除包含 pattern 的行
+sed '/pattern/d' file
+
+# 打印第 10-20 行
+sed -n '10,20p' file
+```
+
+### 4.4 排序与统计
+
+| 命令   | 用途 | 常用写法                                                                       |
+| ------ | ---- | ------------------------------------------------------------------------------ |
+| `sort` | 排序 | `sort file`、`sort -n`（数字排序）、`sort -r`（逆序）、`sort -k2`（按第 2 列） |
+| `uniq` | 去重 | `sort file \| uniq`（须先排序）、`sort file \| uniq -c`（计数）                |
+| `wc`   | 计数 | `wc -l file`（行数）、`wc -w`（词数）、`wc -c`（字节数）                       |
+
+### 4.5 管道辅助
+
+| 命令    | 用途                 | 常用写法                                            |
+| ------- | -------------------- | --------------------------------------------------- |
+| `xargs` | 将 stdin 转为参数    | `find . -name "*.log" \| xargs rm`                  |
+|         |                      | `cat urls.txt \| xargs -I {} curl -O {}`            |
+| `cut`   | 按列截取             | `cut -d':' -f1 /etc/passwd`（以 `:` 分隔取第 1 列） |
+| `tr`    | 字符替换/删除        | `echo "HELLO" \| tr 'A-Z' 'a-z'`（转小写）          |
+| `tee`   | 同时输出到屏幕和文件 | `cmd \| tee output.log`                             |
+
+## 5 权限与用户
+
+![权限位图解](/static/images/blog/linux-commands/permission-bits.png)
+
+### 5.1 查看权限
+
+`ls -la` 输出的第一列就是权限位，格式为 `drwxrwxrwx`：
+
+| 位置       | 含义       | 说明                             |
+| ---------- | ---------- | -------------------------------- |
+| 第 1 位    | 类型       | `d` 目录、`-` 普通文件、`l` 链接 |
+| 第 2-4 位  | Owner 权限 | 文件所有者                       |
+| 第 5-7 位  | Group 权限 | 所属组                           |
+| 第 8-10 位 | Other 权限 | 其他用户                         |
+
+每组中：`r`=读(4)、`w`=写(2)、`x`=执行(1)。
+
+### 5.2 修改权限
+
+| 命令    | 用途     | 常用写法                                                                                |
+| ------- | -------- | --------------------------------------------------------------------------------------- |
+| `chmod` | 数字法   | `chmod 755 file`（rwxr-xr-x）、`chmod 644 file`（rw-r--r--）                            |
+| `chmod` | 符号法   | `chmod u+x file`（给 owner 加执行权限）、`chmod go-w file`（去掉 group/other 的写权限） |
+| `chmod` | 递归     | `chmod -R 755 dir/`                                                                     |
+| `chown` | 改所有者 | `chown user:group file`、`chown -R user:group dir/`                                     |
+
+**常用权限速查**：
+
+| 数字  | 权限        | 典型用途         |
+| ----- | ----------- | ---------------- |
+| `755` | `rwxr-xr-x` | 可执行文件、目录 |
+| `644` | `rw-r--r--` | 普通文件         |
+| `700` | `rwx------` | 私有目录         |
+| `600` | `rw-------` | SSH 密钥         |
+
+### 5.3 用户切换
+
+| 命令        | 用途                 | 常用写法                               |
+| ----------- | -------------------- | -------------------------------------- |
+| `sudo`      | 以 root 执行单条命令 | `sudo apt update`                      |
+| `sudo -i`   | 切换到 root shell    | 登录式 shell，加载 root 环境变量       |
+| `su - user` | 切换到指定用户       | `su - deploy`（加 `-` 加载该用户环境） |
+| `whoami`    | 当前用户             | `whoami`                               |
+| `id`        | 用户信息             | `id`（显示 uid、gid、groups）          |
+
+## 6 进程管理
+
+![进程生命周期](/static/images/blog/linux-commands/process-lifecycle.png)
+
+### 6.1 查看进程
+
+| 命令    | 用途       | 常用写法                                           |
+| ------- | ---------- | -------------------------------------------------- |
+| `ps`    | 进程快照   | `ps aux`（所有进程，BSD 风格）                     |
+|         |            | `ps -ef`（所有进程，System V 风格）                |
+|         |            | `ps aux \| grep nginx`（过滤特定进程）             |
+| `top`   | 实时监控   | `top`（`q` 退出，`M` 按内存排序，`P` 按 CPU 排序） |
+| `htop`  | 增强版 top | `htop`（支持鼠标、搜索、树形视图）                 |
+| `pgrep` | 按名查 PID | `pgrep nginx`                                      |
+
+### 6.2 终止进程
+
+| 命令      | 用途       | 常用写法                                              |
+| --------- | ---------- | ----------------------------------------------------- |
+| `kill`    | 发送信号   | `kill PID`（默认 SIGTERM）、`kill -9 PID`（强制终止） |
+| `killall` | 按名终止   | `killall nginx`                                       |
+| `pkill`   | 按模式终止 | `pkill -f "python app.py"`                            |
+
+**常用信号**：
+
+| 信号      | 编号 | 含义                 |
+| --------- | ---- | -------------------- |
+| `SIGTERM` | 15   | 优雅终止（默认）     |
+| `SIGKILL` | 9    | 强制终止（不可捕获） |
+| `SIGHUP`  | 1    | 挂起/重载配置        |
+| `SIGINT`  | 2    | 中断（Ctrl+C）       |
+| `SIGSTOP` | 19   | 暂停（Ctrl+Z）       |
+| `SIGCONT` | 18   | 继续运行             |
+
+### 6.3 后台运行
+
+| 命令     | 用途                           | 常用写法                             |
+| -------- | ------------------------------ | ------------------------------------ |
+| `&`      | 后台运行                       | `./server &`                         |
+| `nohup`  | 防止挂断（退出终端后继续运行） | `nohup ./server > server.log 2>&1 &` |
+| `disown` | 将已运行的进程脱离终端         | 先 `Ctrl+Z` → `bg` → `disown`        |
+
+> **`nohup` 典型用法**：`nohup command > output.log 2>&1 &`。含义：`nohup` 忽略挂断信号，`>` 重定向 stdout，`2>&1` 合并 stderr，`&` 放后台。
+
+### 6.4 作业控制
+
+| 操作         | 命令     | 说明                      |
+| ------------ | -------- | ------------------------- |
+| 暂停前台进程 | `Ctrl+Z` | 进程变为 Stopped 状态     |
+| 查看后台作业 | `jobs`   | 列出当前 shell 的后台作业 |
+| 恢复到前台   | `fg %N`  | N 为作业编号              |
+| 恢复到后台   | `bg %N`  | 以后台方式继续运行        |
+
+### 6.5 定时任务
+
+```bash
+# 编辑当前用户的 crontab
+crontab -e
+
+# 查看当前用户的定时任务
+crontab -l
+```
+
+**crontab 格式**：
+
+```
+分 时 日 月 周  命令
+*  *  *  *  *  command
+
+# 示例
+0 2 * * *   /path/to/backup.sh    # 每天凌晨 2 点
+*/5 * * * * /path/to/check.sh     # 每 5 分钟
+0 0 * * 0   /path/to/weekly.sh    # 每周日零点
+```
+
+| 字段 | 范围                   |
+| ---- | ---------------------- |
+| 分   | 0-59                   |
+| 时   | 0-23                   |
+| 日   | 1-31                   |
+| 月   | 1-12                   |
+| 周   | 0-7（0 和 7 都是周日） |
+
+## 7 I/O 重定向与管道
+
+![I/O 重定向](/static/images/blog/linux-commands/io-redirection.png)
+
+### 7.1 三个标准流
+
+| 流                 | 文件描述符 | 默认指向 |
+| ------------------ | ---------- | -------- |
+| stdin（标准输入）  | 0          | 键盘     |
+| stdout（标准输出） | 1          | 终端     |
+| stderr（标准错误） | 2          | 终端     |
+
+### 7.2 重定向操作
+
+| 操作             | 语法                   | 说明                        |
+| ---------------- | ---------------------- | --------------------------- |
+| 覆盖写入         | `cmd > file`           | stdout 写入文件（覆盖）     |
+| 追加写入         | `cmd >> file`          | stdout 追加到文件           |
+| 输入重定向       | `cmd < file`           | 从文件读取 stdin            |
+| 错误重定向       | `cmd 2> file`          | stderr 写入文件             |
+| 合并输出         | `cmd > file 2>&1`      | stdout 和 stderr 都写入文件 |
+| 合并输出（简写） | `cmd &> file`          | 同上（Bash 4+）             |
+| 丢弃输出         | `cmd > /dev/null 2>&1` | 静默执行，丢弃所有输出      |
+| 丢弃错误         | `cmd 2>/dev/null`      | 只丢弃错误信息              |
+
+### 7.3 管道与 tee
+
+```bash
+# 管道：前一个命令的 stdout 作为后一个命令的 stdin
+ps aux | grep nginx | grep -v grep
+
+# tee：分流，同时输出到屏幕和文件
+make 2>&1 | tee build.log
+```
+
+### 7.4 Here Document
+
+```bash
+# 多行输入
+cat <<EOF > config.txt
+server=192.168.1.1
+port=8080
+EOF
+
+# 常用于需要多行文本的场景（配置文件、SQL 等）
+mysql -u root <<EOF
+CREATE DATABASE mydb;
+USE mydb;
+EOF
+```
+
+### 7.5 常用组合
+
+```bash
+# 后台运行 + 日志记录 + 忽略挂断
+nohup ./deploy.sh > deploy.log 2>&1 &
+
+# 命令输出同时看和存
+./build.sh 2>&1 | tee build.log
+
+# 只看错误信息
+./script.sh 2>&1 1>/dev/null
+```
+
+## 8 磁盘与存储
+
+![磁盘信息层级](/static/images/blog/linux-commands/disk-layers.png)
+
+### 8.1 磁盘使用
+
+| 命令 | 用途             | 常用写法                                                           |
+| ---- | ---------------- | ------------------------------------------------------------------ |
+| `df` | 文件系统磁盘使用 | `df -h`（人类可读）、`df -hT`（显示文件系统类型）                  |
+| `du` | 目录占用空间     | `du -sh *`（当前目录下各项大小）、`du -sh /path`（指定目录总大小） |
+|      |                  | `du -h --max-depth=1`（只看一层）                                  |
+
+> **`df` vs `du`**：`df` 看的是**文件系统**整体使用情况（分区级别），`du` 看的是**目录/文件**占了多少空间。磁盘满了先用 `df -h` 定位哪个分区满，再用 `du -sh *` 找大目录。
+
+### 8.2 设备信息
+
+| 命令    | 用途          | 常用写法                          |
+| ------- | ------------- | --------------------------------- |
+| `lsblk` | 列出块设备    | `lsblk`（树形显示磁盘和分区）     |
+| `fdisk` | 分区管理      | `fdisk -l`（查看分区表，需 root） |
+| `blkid` | 查看设备 UUID | `blkid`                           |
+
+### 8.3 挂载
+
+| 命令      | 用途       | 常用写法                      |
+| --------- | ---------- | ----------------------------- |
+| `mount`   | 挂载       | `mount /dev/sdb1 /mnt/data`   |
+| `umount`  | 卸载       | `umount /mnt/data`            |
+| `findmnt` | 查看挂载点 | `findmnt`（树形显示所有挂载） |
+
+开机自动挂载编辑 `/etc/fstab`，格式：
+
+```
+设备/UUID    挂载点    文件系统    选项    dump    fsck
+UUID=xxx    /mnt/data    ext4    defaults    0    2
+```
+
+### 8.4 清理空间
+
+```bash
+# 查找大于 100M 的文件
+find / -type f -size +100M 2>/dev/null | head -20
+
+# 查看当前目录下各子目录大小并排序
+du -sh */ | sort -rh | head -10
+
+# 清理 apt 缓存（Debian/Ubuntu）
+sudo apt autoremove && sudo apt clean
+
+# 清理 journal 日志（保留最近 3 天）
+sudo journalctl --vacuum-time=3d
+```
+
+## 9 内存与性能
+
+### 9.1 内存
+
+| 命令   | 用途     | 常用写法              |
+| ------ | -------- | --------------------- |
+| `free` | 内存使用 | `free -h`（人类可读） |
+
+`free -h` 输出解读：
+
+| 行           | 含义                                  |
+| ------------ | ------------------------------------- |
+| `total`      | 物理内存总量                          |
+| `used`       | 已使用（含缓存）                      |
+| `free`       | 完全空闲                              |
+| `buff/cache` | 缓冲/缓存（可回收）                   |
+| `available`  | **实际可用**（free + 可回收的 cache） |
+
+> 看内存够不够用，看 `available` 而不是 `free`。Linux 会主动用空闲内存做缓存，所以 `free` 很小是正常的。
+
+### 9.2 CPU 与负载
+
+| 命令     | 用途         | 常用写法                           |
+| -------- | ------------ | ---------------------------------- |
+| `uptime` | 负载均值     | 三个数字分别是 1/5/15 分钟平均负载 |
+| `nproc`  | CPU 核数     | `nproc`（负载 > 核数说明过载）     |
+| `lscpu`  | CPU 详细信息 | `lscpu`                            |
+
+### 9.3 系统监控
+
+| 命令     | 用途            | 常用写法                                   |
+| -------- | --------------- | ------------------------------------------ |
+| `vmstat` | 虚拟内存/CPU/IO | `vmstat 1 5`（每秒采样，共 5 次）          |
+| `iostat` | 磁盘 I/O        | `iostat -x 1`（扩展统计，每秒刷新）        |
+| `sar`    | 系统综合统计    | `sar -u 1 5`（CPU）、`sar -r 1 5`（内存）  |
+| `dmesg`  | 内核日志        | `dmesg -T \| tail`（带时间戳查看最近日志） |
+
+### 9.4 /proc 文件系统
+
+| 路径               | 内容                     |
+| ------------------ | ------------------------ |
+| `/proc/cpuinfo`    | CPU 信息                 |
+| `/proc/meminfo`    | 内存信息                 |
+| `/proc/loadavg`    | 系统负载                 |
+| `/proc/PID/status` | 指定进程的状态           |
+| `/proc/PID/fd/`    | 指定进程打开的文件描述符 |
+
+## 10 网络
+
+![网络排查路径](/static/images/blog/linux-commands/network-stack.png)
+
+### 10.1 接口与路由
+
+| 命令       | 用途              | 常用写法                     |
+| ---------- | ----------------- | ---------------------------- |
+| `ip addr`  | 查看网络接口      | `ip a`（简写）               |
+| `ip route` | 查看路由表        | `ip r`                       |
+| `ip link`  | 查看/管理接口状态 | `ip link set eth0 up/down`   |
+| `hostname` | 主机名            | `hostname -I`（显示所有 IP） |
+
+### 10.2 连通测试
+
+| 命令         | 用途                   | 常用写法                            |
+| ------------ | ---------------------- | ----------------------------------- |
+| `ping`       | 测试连通性             | `ping -c 4 google.com`（发 4 个包） |
+| `traceroute` | 路由追踪               | `traceroute google.com`             |
+| `mtr`        | 持续路由追踪（增强版） | `mtr google.com`                    |
+
+### 10.3 DNS
+
+| 命令       | 用途               | 常用写法                                                 |
+| ---------- | ------------------ | -------------------------------------------------------- |
+| `dig`      | DNS 查询           | `dig example.com`、`dig +short example.com`（只显示 IP） |
+| `nslookup` | DNS 查询（交互式） | `nslookup example.com`                                   |
+| `host`     | DNS 查询（简洁）   | `host example.com`                                       |
+
+### 10.4 HTTP 请求
+
+**curl** 常用参数：
+
+| 参数 | 用途             | 示例                                                                      |
+| ---- | ---------------- | ------------------------------------------------------------------------- |
+| `-s` | 静默模式         | `curl -s url`                                                             |
+| `-o` | 输出到文件       | `curl -o file url`                                                        |
+| `-O` | 保存为远程文件名 | `curl -O url`                                                             |
+| `-L` | 跟随重定向       | `curl -L url`                                                             |
+| `-H` | 自定义请求头     | `curl -H "Authorization: Bearer token" url`                               |
+| `-X` | 指定 HTTP 方法   | `curl -X POST url`                                                        |
+| `-d` | POST 数据        | `curl -X POST -d '{"key":"val"}' -H "Content-Type: application/json" url` |
+| `-I` | 只显示响应头     | `curl -I url`                                                             |
+| `-w` | 自定义输出格式   | `curl -w "%{http_code}" -s -o /dev/null url`（只看状态码）                |
+
+```bash
+# 下载文件
+wget https://example.com/file.tar.gz
+wget -c url   # 断点续传
+```
+
+### 10.5 端口与连接
+
+| 命令      | 用途          | 常用写法                              |
+| --------- | ------------- | ------------------------------------- |
+| `ss`      | 查看端口/连接 | `ss -tlnp`（TCP 监听端口 + 进程信息） |
+|           |               | `ss -tunp`（所有 TCP/UDP 连接）       |
+| `netstat` | 同 ss（旧版） | `netstat -tlnp`                       |
+| `lsof`    | 查看端口占用  | `lsof -i :8080`（谁在用 8080 端口）   |
+
+> `ss` 是 `netstat` 的现代替代品，速度更快。参数含义：`-t` TCP、`-u` UDP、`-l` 监听、`-n` 数字显示、`-p` 显示进程。
+
+### 10.6 防火墙
+
+**ufw**（Debian/Ubuntu，简单易用）：
+
+| 命令                            | 用途           |
+| ------------------------------- | -------------- |
+| `ufw status`                    | 查看状态       |
+| `ufw allow 80`                  | 允许 80 端口   |
+| `ufw deny 3306`                 | 拒绝 3306 端口 |
+| `ufw allow from 192.168.1.0/24` | 允许网段       |
+| `ufw enable` / `ufw disable`    | 启用/禁用      |
+
+**iptables**（底层，更灵活）：
+
+```bash
+# 查看规则
+iptables -L -n
+
+# 允许 80 端口入站
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+# 拒绝所有入站（危险，确保 SSH 已放行）
+iptables -P INPUT DROP
+```
+
+### 10.7 远程操作
+
+| 命令    | 用途     | 常用写法                                                    |
+| ------- | -------- | ----------------------------------------------------------- |
+| `ssh`   | 远程登录 | `ssh user@host`、`ssh -p 2222 user@host`（指定端口）        |
+| `scp`   | 远程复制 | `scp file user@host:/path/`、`scp -r dir/ user@host:/path/` |
+| `rsync` | 增量同步 | `rsync -avz src/ user@host:/dst/`（压缩传输，只传差异）     |
+
+## 11 系统服务
+
+### 11.1 systemctl
+
+| 命令                                  | 用途                   |
+| ------------------------------------- | ---------------------- |
+| `systemctl status nginx`              | 查看服务状态           |
+| `systemctl start nginx`               | 启动服务               |
+| `systemctl stop nginx`                | 停止服务               |
+| `systemctl restart nginx`             | 重启服务               |
+| `systemctl reload nginx`              | 重载配置（不中断服务） |
+| `systemctl enable nginx`              | 开机自启               |
+| `systemctl disable nginx`             | 取消开机自启           |
+| `systemctl list-units --type=service` | 列出所有服务           |
+
+### 11.2 journalctl
+
+| 命令                                                   | 用途             |
+| ------------------------------------------------------ | ---------------- |
+| `journalctl -u nginx`                                  | 查看指定服务日志 |
+| `journalctl -u nginx -f`                               | 实时跟踪日志     |
+| `journalctl --since "2024-01-01" --until "2024-01-02"` | 时间范围过滤     |
+| `journalctl -p err`                                    | 只看错误级别日志 |
+| `journalctl --disk-usage`                              | 查看日志占用空间 |
+
+## 12 包管理速查
+
+| 操作       | apt (Debian/Ubuntu)    | yum/dnf (RHEL/CentOS) | pacman (Arch)        |
+| ---------- | ---------------------- | --------------------- | -------------------- |
+| 更新索引   | `apt update`           | `yum makecache`       | `pacman -Sy`         |
+| 升级所有包 | `apt upgrade`          | `yum update`          | `pacman -Syu`        |
+| 安装       | `apt install pkg`      | `yum install pkg`     | `pacman -S pkg`      |
+| 卸载       | `apt remove pkg`       | `yum remove pkg`      | `pacman -R pkg`      |
+| 搜索       | `apt search keyword`   | `yum search keyword`  | `pacman -Ss keyword` |
+| 查看已安装 | `apt list --installed` | `yum list installed`  | `pacman -Q`          |
+| 清理缓存   | `apt clean`            | `yum clean all`       | `pacman -Sc`         |
+| 查看包信息 | `apt show pkg`         | `yum info pkg`        | `pacman -Qi pkg`     |
+
+## 13 实用组合技
+
+```bash
+# 1. 查找当前目录下最大的 10 个文件/目录
+du -sh * | sort -rh | head -10
+
+# 2. 查看哪个进程占用了 8080 端口
+ss -tlnp | grep 8080
+# 或
+lsof -i :8080
+
+# 3. 批量替换目录下所有文件中的文本
+find . -type f -name "*.py" -exec sed -i 's/old_api/new_api/g' {} +
+
+# 4. 实时过滤日志中的错误
+tail -f /var/log/app.log | grep --line-buffered "ERROR"
+
+# 5. 统计当前目录下各类型文件数量
+find . -type f | sed 's/.*\.//' | sort | uniq -c | sort -rn
+
+# 6. 查看 TCP 连接状态分布
+ss -ant | awk '{print $1}' | sort | uniq -c | sort -rn
+
+# 7. 压缩与解压
+tar czf archive.tar.gz dir/       # 压缩
+tar xzf archive.tar.gz            # 解压
+tar xjf archive.tar.bz2           # 解压 bz2
+unzip archive.zip -d target_dir/  # 解压 zip
+
+# 8. 监控命令输出变化（每 2 秒刷新）
+watch -n 2 'ss -tlnp'
+```
+
+## 14 快速参考
+
+### 14.1 文件操作
+
+| 场景               | 命令                   |
+| ------------------ | ---------------------- |
+| 列出文件（含隐藏） | `ls -la`               |
+| 递归复制目录       | `cp -r src/ dst/`      |
+| 递归删除           | `rm -rf dir/`          |
+| 查找文件           | `find . -name "*.log"` |
+| 创建多级目录       | `mkdir -p a/b/c`       |
+
+### 14.2 文本处理
+
+| 场景         | 命令                        |
+| ------------ | --------------------------- |
+| 递归搜索文本 | `grep -rn "pattern" .`      |
+| 实时看日志   | `tail -f file`              |
+| 替换文件内容 | `sed -i 's/old/new/g' file` |
+| 按列提取     | `awk '{print $1}' file`     |
+| 统计行数     | `wc -l file`                |
+
+### 14.3 进程与后台
+
+| 场景           | 命令                       |
+| -------------- | -------------------------- |
+| 查所有进程     | `ps aux`                   |
+| 后台运行不挂断 | `nohup cmd > log 2>&1 &`   |
+| 杀进程         | `kill PID` / `kill -9 PID` |
+| 查看后台作业   | `jobs`                     |
+
+### 14.4 磁盘与内存
+
+| 场景         | 命令       |
+| ------------ | ---------- |
+| 磁盘使用总览 | `df -h`    |
+| 目录大小     | `du -sh *` |
+| 内存使用     | `free -h`  |
+| 系统负载     | `uptime`   |
+
+### 14.5 网络
+
+| 场景         | 命令                         |
+| ------------ | ---------------------------- |
+| 查看本机 IP  | `ip a` / `hostname -I`       |
+| 测试连通性   | `ping -c 4 host`             |
+| 查看监听端口 | `ss -tlnp`                   |
+| GET 请求     | `curl -s url`                |
+| 远程同步     | `rsync -avz src/ host:/dst/` |
+
+### 14.6 系统管理
+
+| 场景               | 命令                     |
+| ------------------ | ------------------------ |
+| 服务状态           | `systemctl status name`  |
+| 重启服务           | `systemctl restart name` |
+| 查看服务日志       | `journalctl -u name -f`  |
+| 安装软件（Debian） | `apt install pkg`        |
+| 定时任务           | `crontab -e`             |
+
+## 15 参考链接
+
+- [Linux man pages online](https://man7.org/linux/man-pages/)
+- [tldr pages（简化版 man）](https://tldr.sh/)
+- [ExplainShell（命令解析工具）](https://explainshell.com/)
+- [tmux 实用指南](/blog/tmux-guide)（本站）
+- [Ranger 完全指南](/blog/ranger-guide)（本站）
+- [LazyVim 完全指南](/blog/lazyvim-guide)（本站）
