@@ -53,6 +53,17 @@ const resourcesData: ResourceCategory[] = [
       },
     ],
   },
+  {
+    title: '开源 & 社区',
+    icon: '🐙',
+    items: [
+      {
+        title: 'HelloGitHub',
+        description: '分享 GitHub 上有趣、入门级的开源项目，每月发布一期，帮助你发现和参与开源。',
+        url: 'https://hellogithub.com/',
+      },
+    ],
+  },
 ]
 
 export default resourcesData
