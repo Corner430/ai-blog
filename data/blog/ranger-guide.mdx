@@ -1,0 +1,480 @@
+---
+title: 'Ranger 完全指南：终端里的 Vim 式文件管理器'
+date: '2026-04-07'
+tags: ['开发工具']
+draft: false
+images: ['/static/images/blog/covers/cover-ranger.png']
+summary: '从 Miller Columns 三列布局到 scope.sh 预览生态的精炼指南。涵盖 Vim 式导航、文件操作、Rifle 文件关联、自定义命令，以及 LazyVim 集成。'
+---
+
+![题图](/static/images/blog/ranger-guide/hero.png)
+
+## 1 前言
+
+[Ranger](https://github.com/ranger/ranger) 是一个终端文件管理器（TUI），用 Python 编写，GitHub 17k+ stars，GPL-3.0 协议。它用 **Miller Columns**（三列布局）展示目录结构，用 Vim 式键位完成所有文件操作，并通过 `scope.sh` 支持几乎所有文件类型的终端内预览。它还自带 **Rifle**——一个智能文件启动器，能自动选择合适的程序打开文件。
+
+**前置条件**：已安装 Python（>= 3.x）。
+
+## 2 Miller Columns 与命令行对照
+
+![Miller Columns 三列布局](/static/images/blog/ranger-guide/miller-columns.png)
+
+Ranger 的核心就是这张图：三列同时显示**父目录、当前目录、文件预览**，用 `h`/`l` 左右穿梭，`j`/`k` 上下移动。一个界面替代了命令行中的多个命令：
+
+| 命令行        | Ranger 操作                     |
+| ------------- | ------------------------------- |
+| `ls`          | 打开即可看到（中列）            |
+| `cd <dir>`    | `l` 进入目录 / `h` 返回上级     |
+| `cat <file>`  | 选中文件自动预览（右列）        |
+| `cp src dst`  | `yy`（复制）→ 导航到目标 → `pp` |
+| `mv src dst`  | `dd`（剪切）→ 导航到目标 → `pp` |
+| `rm <file>`   | `dD`（删除）                    |
+| `find / grep` | `/`（搜索）                     |
+| `file <file>` | 自动识别（Rifle）               |
+
+## 3 安装与配置
+
+### 3.1 各平台安装
+
+**pip / pipx**（推荐 pipx 隔离环境）：
+
+```bash
+pip install ranger-fm
+# 或
+pipx run --spec ranger-fm ranger
+```
+
+**Homebrew**（macOS / Linux）：
+
+```bash
+brew install ranger
+```
+
+**Ubuntu / Debian**：
+
+```bash
+sudo apt install ranger
+```
+
+**Arch Linux**：
+
+```bash
+sudo pacman -S ranger
+```
+
+**源码直接运行**（无需安装）：
+
+```bash
+git clone https://github.com/ranger/ranger.git
+cd ranger
+python ranger.py
+```
+
+**验证**：
+
+```bash
+ranger --version
+```
+
+### 3.2 生成配置文件
+
+```bash
+ranger --copy-config=all
+```
+
+这会将默认配置复制到 `~/.config/ranger/`：
+
+| 文件          | 用途                               |
+| ------------- | ---------------------------------- |
+| `rc.conf`     | 启动命令、键位绑定、界面设置       |
+| `commands.py` | 自定义 `:` 命令                    |
+| `rifle.conf`  | 文件关联规则（用什么程序打开文件） |
+| `scope.sh`    | 文件预览脚本（右列显示什么）       |
+
+> 设置 `RANGER_LOAD_DEFAULT_RC=false` 可避免加载全局默认配置，只用你自己的 `rc.conf`。
+
+### 3.3 基础配置
+
+在 `~/.config/ranger/rc.conf` 中添加常用设置：
+
+```bash
+set viewmode miller           # 默认三列布局
+set column_ratios 1,3,4       # 三列宽度比
+set show_hidden true          # 显示隐藏文件
+set preview_files true        # 启用文件预览
+set preview_images true       # 启用图片预览
+set preview_images_method kitty  # 图片预览方式（kitty/ueberzug/sixel）
+set vcs_aware true            # 显示 Git 状态标记
+set draw_borders both         # 面板边框
+```
+
+| 配置项                  | 说明             | 默认值    |
+| ----------------------- | ---------------- | --------- |
+| `show_hidden`           | 显示隐藏文件     | `false`   |
+| `preview_files`         | 文件预览         | `true`    |
+| `preview_images`        | 图片预览         | `false`   |
+| `preview_images_method` | 图片预览方式     | `w3m`     |
+| `vcs_aware`             | 显示版本控制状态 | `false`   |
+| `column_ratios`         | 三列宽度比       | `1,3,4`   |
+| `sort`                  | 排序方式         | `natural` |
+
+### 3.4 Shell 别名与自动 cd
+
+```bash
+alias ra='ranger'
+```
+
+退出 Ranger 后自动 cd 到浏览的目录（推荐加到 `~/.bashrc` 或 `~/.zshrc`）：
+
+```bash
+ranger_cd() {
+    local tmp="$(mktemp -t ranger_cd.XXXXXX)"
+    ranger --choosedir="$tmp" -- "${@:-$(pwd)}"
+    if chosen_dir="$(cat -- "$tmp")" && [ -n "$chosen_dir" ] && [ "$chosen_dir" != "$(pwd)" ]; then
+        cd -- "$chosen_dir"
+    fi
+    rm -f -- "$tmp"
+}
+alias ra='ranger_cd'
+```
+
+防止嵌套 Ranger（在 Ranger 内按 `S` 打开 shell 后再次启动 Ranger）：
+
+```bash
+ranger() {
+    if [ -z "$RANGER_LEVEL" ]; then
+        /usr/bin/ranger "$@"
+    else
+        exit
+    fi
+}
+```
+
+## 4 导航
+
+![导航操作](/static/images/blog/ranger-guide/navigation-flow.png)
+
+### 4.1 基本移动
+
+| 操作         | 快捷键              |
+| ------------ | ------------------- |
+| 上下移动     | `j` / `k` 或方向键  |
+| 进入目录     | `l` 或 `Enter`      |
+| 返回上级     | `h`                 |
+| 跳到第一个   | `gg`                |
+| 跳到最后一个 | `G`                 |
+| 上/下翻页    | `Ctrl+f` / `Ctrl+b` |
+| 屏幕顶/中/底 | `H` / `M` / `L`     |
+
+### 4.2 目录跳转
+
+| 操作            | 快捷键       |
+| --------------- | ------------ |
+| 回到主目录      | `gh`         |
+| 前往 /etc       | `ge`         |
+| 前往 /tmp       | `gt` 或 `gT` |
+| 前往 /usr       | `gu`         |
+| 前往 /media     | `gm`         |
+| 前往 /run/media | `gi`         |
+| 设置书签        | `m` + 字母   |
+| 跳到书签        | `'` + 字母   |
+| 删除书签        | `um` + 字母  |
+
+### 4.3 搜索与过滤
+
+| 操作         | 快捷键    |
+| ------------ | --------- |
+| 搜索文件名   | `/`       |
+| 快速定位     | `f`       |
+| 下一个匹配   | `n`       |
+| 上一个匹配   | `N`       |
+| 过滤当前目录 | `zf`      |
+| 清除过滤     | `zf` 留空 |
+
+### 4.4 标签页
+
+| 操作          | 快捷键              |
+| ------------- | ------------------- |
+| 新建标签页    | `gn` 或 `Ctrl+n`    |
+| 关闭标签页    | `gc` 或 `Ctrl+w`    |
+| 下一个标签页  | `Tab` 或 `gt`       |
+| 上一个标签页  | `Shift+Tab` 或 `gT` |
+| 切换到第 N 个 | `Alt+N`（N=1-9）    |
+
+## 5 文件操作
+
+![文件操作流程](/static/images/blog/ranger-guide/file-operations.png)
+
+### 5.1 选择文件
+
+| 操作          | 快捷键  |
+| ------------- | ------- |
+| 标记/取消标记 | `space` |
+| 反选          | `v`     |
+| 可视选择模式  | `V`     |
+| 取消所有标记  | `uv`    |
+
+### 5.2 复制、移动、删除
+
+| 操作             | 快捷键 | 对应命令          |
+| ---------------- | ------ | ----------------- |
+| 复制（yank）     | `yy`   | `cp`              |
+| 剪切（cut）      | `dd`   | `mv`（移动）      |
+| 粘贴             | `pp`   | —                 |
+| 覆盖粘贴         | `po`   | `cp -f` / `mv -f` |
+| 删除（确认）     | `dD`   | `rm`              |
+| 复制文件名       | `yn`   | —                 |
+| 复制完整路径     | `yp`   | —                 |
+| 复制所在目录路径 | `yd`   | —                 |
+
+### 5.3 创建与重命名
+
+| 操作       | 快捷键/命令     |
+| ---------- | --------------- |
+| 重命名     | `cw`            |
+| 追加重命名 | `A`             |
+| 插入重命名 | `I`             |
+| 新建目录   | `:mkdir <name>` |
+| 新建文件   | `:touch <name>` |
+| 修改权限   | `:chmod <mode>` |
+
+### 5.4 批量重命名
+
+选中多个文件后执行 `:bulkrename`，Ranger 会用 `$EDITOR` 打开文件名列表。修改后保存退出，Ranger 自动执行重命名。这在批量修改文件名时极为高效。
+
+## 6 预览系统
+
+![预览生态](/static/images/blog/ranger-guide/preview-ecosystem.png)
+
+Ranger 的 `scope.sh` 是它的杀手级功能——根据文件类型调用不同的预览工具，在终端右列直接显示内容。
+
+### 6.1 预览工具对照
+
+| 文件类型 | 预览工具                            | 安装命令（示例）                |
+| -------- | ----------------------------------- | ------------------------------- |
+| 源代码   | `bat` / `highlight` / `pygmentize`  | `pip install pygments`          |
+| 图片     | `ueberzug` / kitty / sixel          | `pip install ueberzug`          |
+| PDF      | `pdftoppm`（图）/ `pdftotext`（文） | `apt install poppler-utils`     |
+| 视频     | `ffmpegthumbnailer`                 | `apt install ffmpegthumbnailer` |
+| 压缩包   | `atool` / `bsdtar` / `7z`           | `apt install atool`             |
+| JSON     | `jq` / `python -m json.tool`        | `apt install jq`                |
+| HTML     | `lynx` / `w3m` / `elinks`           | `apt install w3m`               |
+| 媒体信息 | `mediainfo` / `exiftool`            | `apt install mediainfo`         |
+| SQLite   | `sqlite3`                           | `apt install sqlite3`           |
+| SVG      | `rsvg-convert`                      | `apt install librsvg2-bin`      |
+| 字体     | `fontimage`                         | `apt install fontforge`         |
+
+### 6.2 图片预览配置
+
+在 `rc.conf` 中设置预览方式：
+
+```bash
+set preview_images true
+set preview_images_method kitty    # kitty 终端用户
+# set preview_images_method ueberzug  # 其他终端
+# set preview_images_method sixel     # 支持 Sixel 的终端
+```
+
+> kitty 终端原生支持图片预览，效果最好。其他终端推荐 ueberzug（X11）或 ueberzugpp（Wayland）。
+
+## 7 Rifle 文件关联
+
+Ranger 自带的 **Rifle** 是一个独立的文件启动器，通过 `rifle.conf` 中的规则决定用什么程序打开文件。
+
+规则格式：`条件 = 命令`。Rifle 从上往下匹配，第一个命中的规则生效。
+
+常用规则示例：
+
+```bash
+# 文本文件用 $EDITOR 打开
+mime ^text, label editor = nvim -- "$@"
+
+# PDF 用 zathura
+ext pdf = zathura -- "$@"
+
+# 图片用 feh
+mime ^image, has feh = feh -- "$@"
+
+# 视频用 mpv
+mime ^video, has mpv = mpv -- "$@"
+
+# 兜底：用 xdg-open
+else = xdg-open "$1"
+```
+
+| 条件关键字 | 说明                            |
+| ---------- | ------------------------------- |
+| `ext`      | 匹配文件扩展名                  |
+| `mime`     | 匹配 MIME 类型                  |
+| `has`      | 检查程序是否存在                |
+| `label`    | 给规则命名（用于 `:open_with`） |
+| `terminal` | 需要在终端中运行                |
+
+在 Ranger 中按 `r` 可以手动选择用哪个程序打开当前文件。
+
+## 8 自定义命令
+
+在 `~/.config/ranger/commands.py` 中定义自定义命令。确保文件开头有：
+
+```python
+from ranger.api.commands import *
+```
+
+### 8.1 解压文件
+
+```python
+import os
+from ranger.core.loader import CommandLoader
+
+class extract_here(Command):
+    """:extract_here
+    用 atool 解压选中的文件到当前目录。
+    """
+    def execute(self):
+        cwd = self.fm.thisdir
+        marked = tuple(cwd.get_selection())
+        if not marked:
+            return
+        original = cwd.path
+        au_flags = ['-x', cwd.path, '-e']
+        obj = CommandLoader(
+            args=['aunpack'] + au_flags + [f.path for f in marked],
+            descr="解压文件",
+            read=True,
+        )
+        obj.signal_bind('after', lambda _: cwd.load_content())
+        self.fm.loader.add(obj)
+```
+
+### 8.2 fzf 集成
+
+```python
+import os
+import subprocess
+
+class fzf_select(Command):
+    """:fzf_select
+    用 fzf 模糊搜索并跳转到选中的文件或目录。
+    """
+    def execute(self):
+        command = "find -L . \\( -path '*/\\.*' -o -fstype 'dev' -o -fstype 'proc' \\) " \
+                  "-prune -o -print 2>/dev/null | sed 1d | cut -b3- | fzf +m"
+        fzf = self.fm.execute_command(command, stdout=subprocess.PIPE)
+        stdout, _ = fzf.communicate()
+        if fzf.returncode == 0:
+            selected = os.path.abspath(stdout.decode('utf-8').strip())
+            if os.path.isdir(selected):
+                self.fm.cd(selected)
+            else:
+                self.fm.select_file(selected)
+```
+
+在 `rc.conf` 中绑定快捷键：
+
+```bash
+map <C-f> fzf_select
+```
+
+## 9 LazyVim 集成
+
+与 [Lazydocker](/blog/lazydocker-guide) 相同，利用 LazyVim 自带的 `snacks.nvim` 即可零插件集成。在 `~/.config/nvim/lua/config/keymaps.lua` 中添加：
+
+```lua
+if vim.fn.executable("ranger") == 1 then
+  vim.keymap.set("n", "<leader>R", function()
+    Snacks.terminal("ranger", { cwd = LazyVim.root() })
+  end, { desc = "Ranger" })
+end
+```
+
+按 `<leader>R` 在浮动窗口中打开 Ranger，`q` 退出回到编辑器。与 `<leader>gg`（[Lazygit](/blog/lazygit-guide)）、`<leader>D`（[Lazydocker](/blog/lazydocker-guide)）体验一致。
+
+> 如果需要 Ranger 退出时将选中的文件传回 Neovim，可以使用 [ranger.nvim](https://github.com/kelly-lin/ranger.nvim) 插件替代上述方案。
+
+## 10 快速参考
+
+### 10.1 导航
+
+| 按键                | 作用         |
+| ------------------- | ------------ |
+| `h` / `l`           | 上级 / 进入  |
+| `j` / `k`           | 上下移动     |
+| `gg` / `G`          | 跳到首 / 末  |
+| `H` / `M` / `L`     | 屏幕顶/中/底 |
+| `Ctrl+f` / `Ctrl+b` | 翻页         |
+| `gh`                | 回主目录     |
+| `/`                 | 搜索         |
+| `f`                 | 快速定位     |
+| `m` + 字母          | 设置书签     |
+| `'` + 字母          | 跳到书签     |
+
+### 10.2 文件操作
+
+| 按键        | 作用            |
+| ----------- | --------------- |
+| `space`     | 标记/取消       |
+| `v`         | 反选            |
+| `yy`        | 复制            |
+| `dd`        | 剪切            |
+| `pp`        | 粘贴            |
+| `dD`        | 删除            |
+| `cw`        | 重命名          |
+| `A` / `I`   | 追加/插入重命名 |
+| `yn` / `yp` | 复制文件名/路径 |
+
+### 10.3 标签与书签
+
+| 按键               | 作用         |
+| ------------------ | ------------ |
+| `gn` / `Ctrl+n`    | 新建标签页   |
+| `gc` / `Ctrl+w`    | 关闭标签页   |
+| `Tab` / `gt`       | 下一个标签页 |
+| `Shift+Tab` / `gT` | 上一个标签页 |
+| `m` + 字母         | 设置书签     |
+| `'` + 字母         | 跳到书签     |
+| `um` + 字母        | 删除书签     |
+
+### 10.4 预览与显示
+
+| 按键 | 作用               |
+| ---- | ------------------ |
+| `i`  | 全屏预览           |
+| `zh` | 切换隐藏文件       |
+| `zp` | 切换预览           |
+| `zi` | 切换图片预览       |
+| `zv` | 切换 VCS 状态      |
+| `S`  | 在当前目录开 shell |
+
+### 10.5 排序
+
+| 按键 | 排序方式   |
+| ---- | ---------- |
+| `on` | 按名称     |
+| `os` | 按大小     |
+| `ot` | 按类型     |
+| `om` | 按修改时间 |
+| `oc` | 按创建时间 |
+| `or` | 反转排序   |
+
+### 10.6 系统
+
+| 按键 | 作用            |
+| ---- | --------------- |
+| `?`  | 帮助            |
+| `:`  | 命令行模式      |
+| `!`  | 执行 shell 命令 |
+| `r`  | 选择打开方式    |
+| `R`  | 刷新            |
+| `q`  | 退出            |
+| `ZZ` | 退出            |
+
+## 11 参考链接
+
+- [Ranger GitHub 仓库](https://github.com/ranger/ranger)
+- [Ranger 官方 User Guide](https://github.com/ranger/ranger/wiki/Official-user-guide)
+- [Arch Wiki - Ranger](https://wiki.archlinux.org/title/Ranger)
+- [Ranger Cheatsheet](https://ranger.github.io/cheatsheet.svg)
+- [LazyVim 完全指南](/blog/lazyvim-guide)（本站）
+- [Lazygit 完全指南](/blog/lazygit-guide)（本站）
+- [Lazydocker 完全指南](/blog/lazydocker-guide)（本站）
+- [tmux 实用指南](/blog/tmux-guide)（本站）
