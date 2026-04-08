@@ -374,7 +374,7 @@ TypeScript 特有快捷键：
 
 ### 7.5 手动启用 / 禁用语言
 
-如果不需要某个语言支持，可以用 `:LazyExtras` 命令管理。在列表中找到对应的 extra，按 `x` 切换启用/禁用。
+安装器 v3.1.0 起，预装的 extras 通过项目根目录的 `lazyvim.json` 文件管理（而非 Lua 代码）。你也可以在 nvim 中用 `:LazyExtras` 命令交互式管理——在列表中找到对应的 extra，按 `x` 切换启用/禁用，变更会自动写入 `lazyvim.json`。
 
 通用操作（`gd`、`gr`、`K`、`<leader>ca`、`<leader>cr`、`<leader>cf`）在所有语言中统一可用，这是 LSP 的优势——学一套快捷键，所有语言通用。
 
@@ -414,68 +414,33 @@ OSC52 是一种终端转义序列协议，可以通过 SSH 连接将剪贴板内
 
 ### 9.2 手动配置
 
-如果没有使用安装器，创建 `~/.config/nvim/lua/plugins/osc52.lua`：
+Neovim 0.10+ 内置了 OSC52 clipboard provider，无需第三方插件。如果没有使用安装器，创建 `~/.config/nvim/lua/plugins/osc52.lua`：
 
 ```lua
+-- SSH 环境下使用 Neovim 内置 OSC52 剪贴板 provider
 return {
   {
-    "ojroques/nvim-osc52",
-    config = function()
-      local osc52 = require("osc52")
-      osc52.setup({
-        max_length = 0,
-        silent = true,
-        trim = false,
-      })
-
-      -- 自定义 OSC52 发送：通过 tmux client tty 直接写入
-      -- nvim 的 stderr 在 tmux 中不连接终端 pty，需要绕过
-      local function send_osc52(text)
-        local b64 = require("osc52.base64").enc(text)
-        local seq = string.format("\027]52;c;%s\007", b64)
-
-        if os.getenv("TMUX") then
-          local handle = io.popen("tmux list-clients -F '#{client_tty}' 2>/dev/null")
-          if handle then
-            local ttys = handle:read("*a")
-            handle:close()
-            for tty in ttys:gmatch("[^\n]+") do
-              local f = io.open(tty, "w")
-              if f then
-                f:write(seq)
-                f:close()
-                return
-              end
-            end
-          end
-        end
-
-        -- fallback: 非 tmux 环境使用插件默认方式
-        osc52.copy(text)
-      end
-
-      vim.api.nvim_create_autocmd("TextYankPost", {
-        callback = function()
-          if vim.v.event.operator == "y" then
-            local reg = vim.v.event.regname
-            local text = vim.fn.getreg(reg)
-            if text and #text > 0 then
-              send_osc52(text)
-            end
-          end
-        end,
-      })
+    "LazyVim/LazyVim",
+    opts = function()
+      vim.g.clipboard = {
+        name = "OSC 52",
+        copy = {
+          ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+          ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+        },
+        paste = {
+          ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+          ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
+        },
+      }
     end,
   },
 }
 ```
 
-在 `~/.config/nvim/lua/config/options.lua` 末尾添加：
+这样 `yy`、`dd` 等操作会自动通过 OSC52 同步到本地剪贴板，无需额外的 `options.lua` 配置。
 
-```lua
--- 系统剪贴板集成（OSC52 通过 TextYankPost 同步到终端剪贴板）
-vim.opt.clipboard = "unnamedplus"
-```
+> **从旧方案迁移：** 如果之前使用 `ojroques/nvim-osc52` 插件，可以直接删除旧配置替换为上面的内容。内置方案不需要 TextYankPost 回调和 tmux tty hack，更简洁可靠。
 
 ### 9.3 tmux 配置要求
 
@@ -491,8 +456,6 @@ set -g allow-passthrough on
 # 声明终端支持 clipboard
 set -as terminal-features ",xterm-256color:RGB:clipboard"
 ```
-
-> **为什么需要通过 tmux tty 发送？** nvim-osc52 插件默认写 stderr（`/dev/fd/2`），但 nvim 在 tmux 中启动时，stderr 不直接连接终端 pty，导致 OSC52 序列无法到达终端。上面的配置通过 `tmux list-clients` 获取真实的 client tty 并直接写入，绕过了这个问题。
 
 ### 9.4 终端兼容性
 
@@ -512,7 +475,6 @@ set -as terminal-features ",xterm-256color:RGB:clipboard"
 | ------------------ | --------------------------------------------------------------------------------------------------- |
 | 复制后本地无法粘贴 | 检查终端是否支持 OSC52                                                                              |
 | tmux 中不工作      | 确认 `set-clipboard external` + `allow-passthrough on`                                              |
-| 使用 yanky 插件    | 确保 TextYankPost 回调中不检查 `regname == ""`，yanky 会改变寄存器                                  |
 | 验证 OSC52 通道    | 在 tmux 中执行 `printf '\033]52;c;%s\a' "$(echo -n 'test' \| base64)"`，然后本地粘贴看是否有 `test` |
 
 ## 10 SSH 环境 Markdown 远程预览
@@ -527,7 +489,7 @@ LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 S
 {
   "iamcco/markdown-preview.nvim",
   optional = true,
-  opts = function()
+  init = function()
     vim.g.mkdp_open_to_the_world = 1       -- 允许外部访问
     vim.g.mkdp_open_ip = "你的服务器IP"     -- 替换为实际 IP
     vim.g.mkdp_port = 8888                  -- 固定端口
@@ -536,6 +498,8 @@ LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 S
   end,
 }
 ```
+
+> **为什么用 `init` 而不是 `opts`？** markdown-preview.nvim 通过 `vim.g` 全局变量读取配置，这些变量需要在插件加载前设置。`init` 在插件加载前执行，`opts` 在加载后才执行，所以必须用 `init`。
 
 ### 10.2 使用方法
 
