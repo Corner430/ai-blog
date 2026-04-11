@@ -214,11 +214,49 @@ q        停止录制
 | `gcc`                      | 注释/取消注释当前行                              |
 | `gc` (可视模式)            | 注释选区                                         |
 
-## 5 C++ 开发（Clangd）
+## 5 自定义快捷键
+
+LazyVim 的默认快捷键已经很丰富，但你可以在 `~/.config/nvim/lua/config/keymaps.lua` 中添加自己的映射。
+
+### 5.1 jj 退出插入模式
+
+```lua
+map("i", "jj", "<ESC>", { desc = "Escape insert with jj" })
+```
+
+Esc 键在大部分键盘上离主键区太远，`Ctrl+[` 虽然等价但需要左手小拇指弯曲。`jj` 是一个经典的替代方案：
+
+- 位于主键区，右手食指连按两下
+- 英文中几乎没有连续两个 j 的单词，误触概率极低
+- 很多 Vim 用户的标配映射
+
+| 快捷键             | 功能                     |
+| ------------------ | ------------------------ |
+| `jj` (Insert 模式) | 退出插入模式，等同于 Esc |
+
+### 5.2 localleader + WASD 调整窗口大小
+
+```lua
+map("n", "<localleader>w", "<cmd>resize +2<cr>", { desc = "Increase Window Height" })
+map("n", "<localleader>s", "<cmd>resize -2<cr>", { desc = "Decrease Window Height" })
+map("n", "<localleader>d", "<cmd>vertical resize -2<cr>", { desc = "Decrease Window Width" })
+map("n", "<localleader>a", "<cmd>vertical resize +2<cr>", { desc = "Increase Window Width" })
+```
+
+LazyVim 默认用 `Ctrl + 方向键` 调整窗口大小，但方向键离主键区太远。这里用 `<localleader>` (默认 `\`) + WASD 替代：
+
+| 快捷键 | 功能         | 助记        |
+| ------ | ------------ | ----------- |
+| `\w`   | 增加窗口高度 | W = 上      |
+| `\s`   | 减少窗口高度 | S = 下      |
+| `\a`   | 增加窗口宽度 | A = 左 (扩) |
+| `\d`   | 减少窗口宽度 | D = 右 (缩) |
+
+## 6 C++ 开发（Clangd）
 
 安装器已预装 `lang.clangd`，提供完整的 C++ IDE 功能。
 
-### 5.1 代码导航
+### 6.1 代码导航
 
 | 按键                | 作用           |
 | ------------------- | -------------- |
@@ -229,7 +267,7 @@ q        停止录制
 | `K`                 | 显示悬浮文档   |
 | `Ctrl+o` / `Ctrl+i` | 跳回/跳前      |
 
-### 5.2 代码操作
+### 6.2 代码操作
 
 | 按键         | 作用                           |
 | ------------ | ------------------------------ |
@@ -240,7 +278,7 @@ q        停止录制
 | `<leader>cs` | 文档符号列表                   |
 | `<leader>ch` | 切换头文件/源文件（.h ↔ .cpp） |
 
-### 5.3 诊断
+### 6.3 诊断
 
 | 按键         | 作用             |
 | ------------ | ---------------- |
@@ -248,7 +286,7 @@ q        停止录制
 | `<leader>xx` | Trouble 诊断面板 |
 | `<leader>xX` | 当前文件诊断     |
 
-### 5.4 自动补全（blink.cmp）
+### 6.4 自动补全（blink.cmp）
 
 | 按键                | 作用                    |
 | ------------------- | ----------------------- |
@@ -258,7 +296,7 @@ q        停止录制
 | `Ctrl+Space`        | 手动触发补全            |
 | `Tab` / `Shift+Tab` | Snippet 下/上一个占位符 |
 
-### 5.5 compile_flags.txt
+### 6.5 compile_flags.txt
 
 在项目根目录创建此文件，clangd 会自动读取编译选项：
 
@@ -268,7 +306,7 @@ q        停止录制
 -Wextra
 ```
 
-### 5.6 编译运行
+### 6.6 编译运行
 
 ```bash
 # 编译运行
@@ -278,7 +316,7 @@ g++ -std=c++17 -Wall -o hello hello.cpp && ./hello
 g++ -std=c++17 -g -Wall -o hello hello.cpp
 ```
 
-## 6 DAP 调试
+## 7 DAP 调试
 
 预装 `dap.core`，支持断点调试。C++ 调试需要先安装 codelldb：在 nvim 中运行 `:MasonInstall codelldb`。
 
@@ -294,11 +332,11 @@ g++ -std=c++17 -g -Wall -o hello hello.cpp
 | `<leader>du` | 打开/关闭调试 UI |
 | `<leader>de` | 评估表达式       |
 
-## 7 多语言开发
+## 8 多语言开发
 
 安装器 v3.0.0 起默认预装以下语言支持，无需额外配置。只要系统上安装了对应的语言运行时，打开文件即可获得完整的 IDE 体验。
 
-### 7.1 Python
+### 8.1 Python
 
 **前置依赖：** `python3`
 
@@ -316,7 +354,7 @@ Python 特有快捷键：
 | `<leader>dPc` | 调试当前类           |
 | `<leader>cv`  | 选择 Python 虚拟环境 |
 
-### 7.2 Go
+### 8.2 Go
 
 **前置依赖：** `go`（>= 1.21）
 
@@ -330,7 +368,7 @@ Python 特有快捷键：
 
 打开 `.go` 文件即可。项目根目录需要有 `go.mod`。
 
-### 7.3 Java
+### 8.3 Java
 
 **前置依赖：** JDK（>= 11）
 
@@ -352,7 +390,7 @@ Java 特有快捷键：
 | `<leader>cxm` | 提取方法       |
 | `<leader>cgs` | 跳转到父类实现 |
 
-### 7.4 TypeScript / JavaScript
+### 8.4 TypeScript / JavaScript
 
 **前置依赖：** Node.js（>= 18）
 
@@ -372,15 +410,15 @@ TypeScript 特有快捷键：
 | `<leader>cD` | 修复所有诊断问题               |
 | `<leader>cV` | 选择 TS 工作区版本             |
 
-### 7.5 手动启用 / 禁用语言
+### 8.5 手动启用 / 禁用语言
 
 安装器 v3.1.0 起，预装的 extras 通过项目根目录的 `lazyvim.json` 文件管理（而非 Lua 代码）。你也可以在 nvim 中用 `:LazyExtras` 命令交互式管理——在列表中找到对应的 extra，按 `x` 切换启用/禁用，变更会自动写入 `lazyvim.json`。
 
 通用操作（`gd`、`gr`、`K`、`<leader>ca`、`<leader>cr`、`<leader>cf`）在所有语言中统一可用，这是 LSP 的优势——学一套快捷键，所有语言通用。
 
-## 8 插件使用
+## 9 插件使用
 
-### 8.1 Mini Surround
+### 9.1 Mini Surround
 
 快速添加/删除/替换括号、引号等包围字符。
 
@@ -390,29 +428,65 @@ TypeScript 特有快捷键：
 | `gsd` + 字符        | 删除包围 | `gsd"` → 删除双引号       |
 | `gsr` + 旧 + 新     | 替换包围 | `gsr"(` → 双引号→括号     |
 
-### 8.2 Yanky
+### 9.2 Yanky
 
 增强复制粘贴，保存 yank 历史。
 
 先 `p` 粘贴，然后用 `[y` / `]y` 循环切换之前复制过的内容。
 
-### 8.3 Flash
+### 9.3 Flash
 
 按 `s` + 输入两个字符 → 屏幕上出现标签 → 按标签字母跳转。比 `f/F` 更适合远距离跳转。
 
-### 8.4 Treesitter Context
+### 9.4 Treesitter Context
 
 自动在屏幕顶部显示当前函数/类名，长文件时特别有用。无需操作，自动生效。
 
-## 9 SSH 剪贴板互通（OSC52）
+### 9.5 在 Neovim 中刷 LeetCode
+
+通过 `leetcode.nvim` 插件，可以直接在 Neovim 中浏览题目、编写代码、提交答案，不需要打开浏览器。
+
+在 `~/.config/nvim/lua/plugins/` 下新建 `leetcode.lua`：
+
+```lua
+return {
+  "kawre/leetcode.nvim",
+  build = ":TSUpdate html",
+  dependencies = {
+    "nvim-lua/plenary.nvim",
+    "MunifTanjim/nui.nvim",
+  },
+  cmd = "Leet",
+  opts = {
+    lang = "cpp",  -- 默认语言
+    cn = {
+      enabled = true,  -- 使用力扣中国站 (leetcode.cn)
+    },
+    storage = {
+      home = vim.fn.stdpath("data") .. "/leetcode",
+    },
+  },
+}
+```
+
+| 命令           | 功能               |
+| -------------- | ------------------ |
+| `:Leet`        | 打开 LeetCode 面板 |
+| `:Leet test`   | 运行测试用例       |
+| `:Leet submit` | 提交答案           |
+| `:Leet list`   | 浏览题目列表       |
+
+首次使用需要登录。插件会打开浏览器让你登录力扣，获取 Cookie 后就可以在 Neovim 中完成所有操作。
+
+## 10 SSH 剪贴板互通（OSC52）
 
 通过 SSH 使用 LazyVim 时，默认无法将复制的内容粘贴到本地电脑。安装器会自动配置 OSC52 协议解决这个问题。
 
-### 9.1 原理
+### 10.1 原理
 
 OSC52 是一种终端转义序列协议，可以通过 SSH 连接将剪贴板内容传输到本地电脑，无需 X11 转发。
 
-### 9.2 手动配置
+### 10.2 手动配置
 
 Neovim 0.10+ 内置了 OSC52 clipboard provider，无需第三方插件。如果没有使用安装器，创建 `~/.config/nvim/lua/plugins/osc52.lua`：
 
@@ -442,7 +516,7 @@ return {
 
 > **从旧方案迁移：** 如果之前使用 `ojroques/nvim-osc52` 插件，可以直接删除旧配置替换为上面的内容。内置方案不需要 TextYankPost 回调和 tmux tty hack，更简洁可靠。
 
-### 9.3 tmux 配置要求
+### 10.3 tmux 配置要求
 
 在 tmux 中使用 OSC52，需要在 `~/.tmux.conf` 中添加：
 
@@ -457,7 +531,7 @@ set -g allow-passthrough on
 set -as terminal-features ",xterm-256color:RGB:clipboard"
 ```
 
-### 9.4 终端兼容性
+### 10.4 终端兼容性
 
 | 终端               | 支持 OSC52          |
 | ------------------ | ------------------- |
@@ -469,7 +543,7 @@ set -as terminal-features ",xterm-256color:RGB:clipboard"
 | macOS Terminal.app | ❌                  |
 | tmux               | ⚠️ 需配置（见上方） |
 
-### 9.5 故障排除
+### 10.5 故障排除
 
 | 问题               | 解决方案                                                                                            |
 | ------------------ | --------------------------------------------------------------------------------------------------- |
@@ -477,11 +551,13 @@ set -as terminal-features ",xterm-256color:RGB:clipboard"
 | tmux 中不工作      | 确认 `set-clipboard external` + `allow-passthrough on`                                              |
 | 验证 OSC52 通道    | 在 tmux 中执行 `printf '\033]52;c;%s\a' "$(echo -n 'test' \| base64)"`，然后本地粘贴看是否有 `test` |
 
-## 10 SSH 环境 Markdown 远程预览
+> 完整的 tmux 配置（Prefix、分屏、Vi 复制、状态栏美化）详见 [tmux 实用指南](/blog/tmux-guide)。
+
+## 11 SSH 环境 Markdown 远程预览
 
 LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 SSH 环境下 `:MarkdownPreview` 会因为找不到浏览器而报错。
 
-### 10.1 配置远程预览
+### 11.1 配置远程预览
 
 在 `~/.config/nvim/lua/plugins/markdown.lua` 中添加：
 
@@ -501,7 +577,7 @@ LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 S
 
 > **为什么用 `init` 而不是 `opts`？** markdown-preview.nvim 通过 `vim.g` 全局变量读取配置，这些变量需要在插件加载前设置。`init` 在插件加载前执行，`opts` 在加载后才执行，所以必须用 `init`。
 
-### 10.2 使用方法
+### 11.2 使用方法
 
 1. 在 nvim 中打开 Markdown 文件
 2. 执行 `:MarkdownPreview`
@@ -511,7 +587,34 @@ LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 S
 
 > 如果使用安装器，这些配置会自动完成（自动检测服务器 IP）。
 
-## 11 从传统 Vim 迁移
+## 12 多机 SSH 开发策略
+
+当你有多台远程开发机时，可以用以下策略管理。
+
+### 12.1 本地轻量 + 远程完整
+
+- **本机 (macOS)**：只启用常用的几个 Extras (如 clangd, python, json, markdown)，保持轻量
+- **远程服务器**：通过安装脚本部署完整配置，启用全部 14 个 Extras
+
+这样本机启动快、占用少，重活放到远程服务器上。
+
+### 12.2 SSH 别名管理
+
+在 `~/.zshrc` 中定义常用机器的别名：
+
+```bash
+alias ssh-dev='ssh root@dev-server -p 36000'
+alias ssh-blog='ssh root@blog-server -p 36000'
+alias ssh-gpu='ssh -L 8889:localhost:8888 root@gpu-server -p 36000'
+```
+
+`-L 8889:localhost:8888` 是端口转发，常用于把远程 Jupyter Notebook 映射到本地浏览器访问。
+
+### 12.3 配置同步
+
+所有机器都用同一套安装脚本 ([lazyvim-installer](https://github.com/corner430/lazyvim-installer)) 部署，确保配置一致。更新配置时只需更新仓库，然后在每台机器上重新运行安装脚本。
+
+## 13 从传统 Vim 迁移
 
 如果你之前使用传统 Vim + vim-plug 的配置方案，以下是对照表：
 
@@ -533,7 +636,7 @@ LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 S
 
 核心 Vim 操作（`hjkl`、`ciw`、`dd`、`/search`、宏、寄存器等）在 LazyVim 中完全一致，无需重新学习。
 
-## 12 快捷键速查表
+## 14 快捷键速查表
 
 ### 文件
 
@@ -577,3 +680,5 @@ LazyVim 的 `lang.markdown` Extra 包含 markdown-preview.nvim 插件，但在 S
 | `gcc`        | 注释切换                       |
 | `<leader>l`  | Lazy 管理器                    |
 | `<leader>?`  | 快捷键搜索                     |
+
+> 搭配使用的终端环境配置详见 [Oh My Zsh 完全配置指南](/blog/Configure-oh-my-zsh) 和 [tmux 实用指南](/blog/tmux-guide)。
