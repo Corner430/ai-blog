@@ -62,6 +62,13 @@ const projectsData: Project[] = [
     imgSrc: '/static/images/projects/sudo-make-me-a-picture.png',
     href: 'https://github.com/Corner430/sudo-make-me-a-picture',
   },
+  {
+    title: '旅行攻略集',
+    description:
+      '自驾游、城市探索等出行攻略合集，使用纯静态 HTML 构建，部署于 EdgeOne Pages。每次旅行一个独立页面，包含路线规划、每日行程、费用预算、实用贴士等详细信息，随时随地可查阅。',
+    imgSrc: '/static/images/projects/travel-guides.png',
+    href: 'https://travel-guides.edgeone.dev',
+  },
 ]
 
 export default projectsData
